@@ -1,0 +1,19 @@
+[
+  {
+    "epoch": 5793,
+    "timestamp": "2024-11-05 20:10:55.302635",
+    "metrics": {
+      "test": {
+        "concept_metrics": {
+          "accuracy": 0.7587251590315104,
+          "precision": 0.47839275445658425,
+          "recall": 0.6765818152244633,
+          "f1": 0.5604830559859867
+        },
+        "sailency_scores": {
+          "sailency_scores": 0.812400989290158
+        }
+      }
+    }
+  }
+]

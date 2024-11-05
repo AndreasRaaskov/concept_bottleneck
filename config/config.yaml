@@ -32,9 +32,9 @@ CUB_dataloader: # Paremeter for the CUB dataloader
 
 #training
 batch_size: 32
-epochs: 1000 #2000  # Number of training epochs
+epochs: 2000 #2000  # Number of training epochs
 lr: 0.001  # Initial learning rate for optimization
-optimizer: 'Adam' # Optimizer to use for training (e.g., "Adam", "SGD", "RMSprop")
+optimizer: 'SGD' # Optimizer to use for training (e.g., "Adam", "SGD", "RMSprop")
 momentum: 0.9  # Momentum factor for SGD optimizer
 weight_decay: 5e-5  # Weight decay (L2 penalty) for optimization
 lambda1: 0.1  # Weighting factor for concept loss in joint training
@@ -51,10 +51,9 @@ transform_method: "resize" # Transformation method for the concept bottleneck mo
 #models
 concept_model: "inception"  # Type of model for concept prediction (e.g., "inception", "resnet")
 pretrained: True  # Whether to use pretrained weights for the concept model
-ckpt: False  #  if true combine train and val data to train the model
+ckpt: True  #  if true combine train and val data to train the model
 freeze: false  # Whether to freeze the bottom part of the inception network
-use_aux: True # Whether to use auxiliary logits
-bottleneck: false  # Whether to predict attributes before class labels
+
 
 #output directorys
 log_dir: None  # Directory to save logs and model checkpoints
