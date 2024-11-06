@@ -3,15 +3,23 @@ mode: Joint #"Standard", "Independent", "Joint", "Sequential","end"  # List of t
 
 
 
-model_path: "models/Joint_Basemodel2/best_Joint_model.pth"  # Path to the model directory
+joint_path: "models/Joint_Basemodel2/best_Joint_model.pth"  # Path to the joint model
+
+XtoC_path: "models/Joint_Basemodel2/best_XtoC_model.pth"  # Path to first part of sequential and independent model
+CtoY_path: "models/Joint_Basemodel2/best_CtoY_model.pth"  # Path to second part of sequential and independent model
+
+XtoY_path: "models/Joint_Basemodel2/best_XtoY_model.pth"  # Path to the model directory
+
 output_dir: "results"  # Directory to save evaluation results if blank will use the model directory
 
-device: "cuda"  # Device to use for training ("auto" for automatic detection, "cuda" for GPU, "cpu" for CPU)
+device: "auto"  # Device to use for training ("auto" for automatic detection, "cuda" for GPU, "cpu" for CPU)
 
 transform_method: "resize" # Transformation method for the concept bottleneck model ("original","resized","center")
 
 split: val # Selcet val or test
 
+sailency: True # Calulate sailency score.
+sailency_methode: "vanilla"  
 
 CUB_dataloader: # Paremeter for the CUB dataloader
   CUB_dir: data/CUB_200_2011 # Path to the CUB dataset directory
