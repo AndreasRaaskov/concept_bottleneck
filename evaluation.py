@@ -52,12 +52,12 @@ def XtoC_test(model,device,cfg: DictConfig):
 
 
     #Make the dataset
-    transform = get_inception_transform(mode="test", methode= cfg.transform_method)
-    data_set = CUB_extnded_dataset(mode="test",config_dict=cfg.CUB_dataloader,transform=transform)
+    transform = get_inception_transform(mode=cfg.split, methode= cfg.transform_method)
+    data_set = CUB_extnded_dataset(mode=cfg.split,config_dict=cfg.CUB_dataloader,transform=transform)
 
     #Make a mask if a model need to be tested on another dataset than it was trained on
     if cfg.CUB_mask.use:
-        mask = CUB_extnded_dataset(mode="test",config_dict=cfg.CUB_mask,transform=transform).concept_mask
+        mask = CUB_extnded_dataset(mode=cfg.split,config_dict=cfg.CUB_mask,transform=transform).concept_mask
         device_mask = torch.tensor(mask).to(device)
     
 
@@ -89,9 +89,6 @@ def XtoC_test(model,device,cfg: DictConfig):
             C_hat = C_hat[..., mask]
 
     
-
-
-
         #Update the logger
         #logger.update_class_accuracy(mode="test",logits=Y_hat, correct_label=Y)
         logger.update_concept_accuracy(mode="test", predictions=C_hat, ground_truth=C)

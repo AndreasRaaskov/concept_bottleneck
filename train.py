@@ -462,7 +462,7 @@ def train_X_to_C_to_y(args):
                     #Calculate concept prediction accuracy
                     trakker.update_concept_accuracy("val",torch.sigmoid(Chat), C)
                     trakker.update_class_accuracy("val",Yhat, Y)
-                    trakker.update_loss("val",sum(loss))
+                    trakker.update_loss("val",loss)
 
             val_loss = trakker.get_loss_metrics("val")['avg_loss']
             val_acc = trakker.get_class_metrics("val")['top1_accuracy'] #Acuracy of class prediction

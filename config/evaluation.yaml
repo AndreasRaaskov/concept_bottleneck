@@ -1,6 +1,8 @@
 
 mode: Joint #"Standard", "Independent", "Joint", "Sequential","end"  # List of training modes to iterate over
 
+
+
 model_path: "models/Joint_Basemodel2/best_Joint_model.pth"  # Path to the model directory
 output_dir: "results"  # Directory to save evaluation results if blank will use the model directory
 
@@ -8,6 +10,7 @@ device: "cuda"  # Device to use for training ("auto" for automatic detection, "c
 
 transform_method: "resize" # Transformation method for the concept bottleneck model ("original","resized","center")
 
+split: val # Selcet val or test
 
 
 CUB_dataloader: # Paremeter for the CUB dataloader
