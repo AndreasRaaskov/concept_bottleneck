@@ -16,17 +16,20 @@ from  torchvision.models import inception_v3,Inception_V3_Weights
 
 # Independent & Sequential Model
 class ModelXtoC(nn.Module):
-    def __init__(self,pretrained, freeze,use_aux, n_concepts):
+    def __init__(self,pretrained, freeze,use_aux, n_concepts,use_sigmoid=True):
         """
         Model used for the X -> C part of the Independent and Sequential models
 
         Args:
             pretrained (bool): If True, returns a model pre-trained on ImageNet
             freeze (bool): If True, freezes the weights of the model except for the last layer
+            use_aux (bool): If True, uses the auxilary model for the inception model
+            n_concepts (int): Number of concepts to predict
+            use_sigmoid (bool): If True, uses sigmoid activation function for the output layer must be false in training since BCEWithLogitsLoss is used
         
-        Returns:
-            model (nn.Module): Inception v3 model
         """
+
+        self.use_sigmoid = use_sigmoid
         super(ModelXtoC, self).__init__()
 
         self.use_aux = use_aux
@@ -51,13 +54,17 @@ class ModelXtoC(nn.Module):
 
         if self.use_aux and self.training:
             Chat, aux_Chat = self.model(x)
-            Chat = self.activation(Chat)
-            aux_Chat = self.activation(aux_Chat)
+
+            if self.use_sigmoid:
+                Chat = self.activation(Chat)
+                aux_Chat = self.activation(aux_Chat)
             return Chat, aux_Chat
         
         else:
             Chat = self.model(x)
-            Chat = self.activation(Chat)
+
+            if self.use_sigmoid:
+                Chat = self.activation(Chat)
             return Chat
 
 
@@ -80,7 +87,21 @@ class ModelCtoY(nn.Module):
 class ModelXtoCtoY(nn.Module):
     
 
-    def __init__(self, pretrained, freeze, n_classes, use_aux, n_concepts):
+    def __init__(self, pretrained, freeze, n_classes, use_aux, n_concepts,use_sigmoid=True):
+        """
+        Model used for the X -> C -> Y part of the Joint model
+
+        Args:
+            pretrained (bool): If True, returns a model pre-trained on ImageNet
+            freeze (bool): If True, freezes the weights of the model except for the last layer
+            n_classes (int): Number of classes to predict
+            use_aux (bool): If True, uses the auxilary model for the inception model
+            n_concepts (int): Number of concepts to predict
+            use_sigmoid (bool): If True, uses sigmoid activation function for the output layer must be false in training since BCEWithLogitsLoss is used
+        """
+
+        self.use_sigmoid = use_sigmoid
+
         super(ModelXtoCtoY, self).__init__()
 
         self.sailency_output = False
@@ -106,22 +127,36 @@ class ModelXtoCtoY(nn.Module):
 
     def forward(self, x):
         """
-        Forward pass of the model
+        Forward pass of the model. Returns the Chat and Yhat unless the sailency_output is set to either 'C' or 'Y' in which case only the Chat or Yhat is returned
         """
 
         if self.use_aux and self.training:
             Chat, aux_Chat = self.CNN_model(x)
-            Chat = self.activation(Chat)
-            Yhat = self.MLP_model(Chat)
 
-            aux_Chat = self.activation(aux_Chat)
-            aux_Yhat = self.aux_MLP_model(aux_Chat)
+            if self.use_sigmoid:
+                Chat = self.activation(Chat)
+                Yhat = self.MLP_model(Chat)
+
+                aux_Chat = self.activation(aux_Chat)
+                aux_Yhat = self.aux_MLP_model(aux_Chat)
+
+            else:
+                #still use sigmoid for Y but not for C
+                Yhat = self.MLP_model(self.activation(Chat))
+                aux_Yhat = self.aux_MLP_model(self.activation(aux_Chat))
+            
             return Chat, Yhat, aux_Chat, aux_Yhat
+        
         else:
             Chat = self.CNN_model(x)
-            Chat = self.activation(Chat)
-            Yhat = self.MLP_model(Chat)
-            if not self.sailency_output:
+
+            if self.use_sigmoid:
+                Chat = self.activation(Chat)
+                Yhat = self.MLP_model(Chat)
+            else:
+                Yhat = self.MLP_model(self.activation(Chat))
+
+            if not self.sailency_output: #If we are not interested in the sailency map
                 return Chat, Yhat
 
             else:

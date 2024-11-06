@@ -68,22 +68,19 @@ def train_X_to_C(args):
     #Write the number of concepts to the logger
     logging.info(f"Number of concepts: {n_concepts}\n")
 
-    model = ModelXtoC(pretrained=args.pretrained, freeze=args.freeze,n_concepts=n_concepts,use_aux=args.use_aux)
+    model = ModelXtoC(pretrained=args.pretrained, freeze=args.freeze,n_concepts=n_concepts,use_aux=args.use_aux,use_sigmoid=False)
 
     model = model.to(device)
 
     #Define the loss function
-    c_criterion = [] #separate criterion (loss function) for each attribute
-
     if args.weighted_loss:
         imbalance = train_data.calculate_imbalance()
-        for ratio in imbalance:
-            # Note this was originally BCEwithLogitsLoss, but I change the output to sigmoid for consistency over all models.
-            c_criterion.append(torch.nn.BCELoss(weight=torch.FloatTensor([ratio])).to(device)) 
+        # Create pos_weights tensor for all concepts at once [num_concepts]
+        pos_weights = torch.tensor(imbalance).to(device)
+        c_criterion = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weights,reduction='sum')
     else:
-        for i in range(n_concepts):
-            c_criterion.append(torch.nn.CrossEntropyLoss().to(device))
-        
+        c_criterion = torch.nn.BCEWithLogitsLoss(reduction='sum')
+            
     #Define the optimizer
     optimizer, scheduler = get_optimizer(model, args)
 
@@ -104,33 +101,22 @@ def train_X_to_C(args):
 
                 #Calculate loss
                 if args.use_aux:
-                    outputs, aux_outputs = model(X)
+                    Chat, aux_Chat = model(X)
                     
-                    main_losses = []
-                    aux_losses = []
-
-                    for i in range(len(c_criterion)): # Loop over each concept and give an individual loss for each. 
-                        main_losses.append(c_criterion[i](outputs[:,i], C[:,i]))
-                        aux_losses.append(c_criterion[i](aux_outputs[:,i], C[:,i]))
-
-                    main_loss = sum(main_losses)
-                    aux_loss = sum(aux_losses)
+                    main_loss = c_criterion(Chat, C) 
+                    aux_loss = c_criterion(aux_Chat, C)
 
                     loss = main_loss + 0.4 * aux_loss
                     trakker.update_loss("train",main_loss)
 
                 else: #testing or no aux logits
                     outputs = model(X)
-                    losses = []
 
-                    for i in range(len(c_criterion)):
-                        losses.append(1.0 * c_criterion[i](outputs[:,i], C[:,i]))
-                        loss = sum(losses)
-
+                    loss = c_criterion(Chat, C)
                     trakker.update_loss("train",loss)
                 
                 #Calculate accuracy
-                trakker.update_concept_accuracy("train",outputs, C)
+                trakker.update_concept_accuracy("train",torch.sigmoid(Chat), C)
                 
 
                 #Backward pass
@@ -150,17 +136,15 @@ def train_X_to_C(args):
                         X = X.to(device)
 
                         #Forward pass
-                        outputs = model(X)
+                        Chat = model(X)
 
                         #Calculate loss
-                        losses = []
+                        loss = c_criterion(Chat, C)
 
-                        for i in range(len(c_criterion)):
-                            losses.append(1.0 * c_criterion[i](outputs[:,i], C[:,i]))
-                        
+
                         #Calculate accuracy
-                        trakker.update_concept_accuracy("val",outputs, C)
-                        trakker.update_loss("val",sum(losses))
+                        trakker.update_concept_accuracy("val",Chat, C)
+                        trakker.update_loss("val",loss)
 
 
                     #Check if the model is the best model
@@ -378,22 +362,20 @@ def train_X_to_C_to_y(args):
     n_classes = train_data.n_classes
 
     model = ModelXtoCtoY(pretrained=args.pretrained, freeze=args.freeze,
-                         n_classes=n_classes, use_aux=args.use_aux, n_concepts=n_concepts)
+                         n_classes=n_classes, use_aux=args.use_aux, n_concepts=n_concepts,use_sigmoid=False)
     model = model.to(device)
 
     #Define the loss function
     y_criterion = torch.nn.CrossEntropyLoss()
 
-    c_criterion = [] #separate criterion (loss function) for each attribute
-
+    #Define the loss function
     if args.weighted_loss:
         imbalance = train_data.calculate_imbalance()
-        for ratio in imbalance:
-            # Note this was originally BCEwithLogitsLoss, but I change the output to sigmoid for consistency over all models.
-            c_criterion.append(torch.nn.BCELoss(weight=torch.FloatTensor([ratio])).to(device)) 
+        # Create pos_weights tensor for all concepts at once [num_concepts]
+        pos_weights = torch.tensor(imbalance).to(device)
+        c_criterion = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weights,reduction='sum')
     else:
-        for i in range(n_concepts):
-            c_criterion.append(torch.nn.CrossEntropyLoss().to(device))
+        c_criterion = torch.nn.BCEWithLogitsLoss(reduction='sum')
 
 
     #Define the optimizer
@@ -419,40 +401,31 @@ def train_X_to_C_to_y(args):
             if args.use_aux:
                 Chat,Yhat, aux_Chat,aux_Yhat = model(X)
 
-                main_losses = []
-                aux_losses = []
-
                 #Calculate y loss
-                main_loss = y_criterion(Yhat, Y)
-                aux_loss = y_criterion(aux_Yhat, Y)
-
-                main_losses.append(main_loss)
-                aux_losses.append(aux_loss)
+                class_loss = y_criterion(Yhat, Y)
+                class_aux_loss = y_criterion(aux_Yhat, Y)
 
                 #Calculate the atribute loss by looping over each prediction, and multiply by lambda 
-                for i in range(len(c_criterion)):
-                    main_losses.append(c_criterion[i](Chat[:, i], C[:, i]) * args.attr_loss_weight)
-                    aux_losses.append(c_criterion[i](aux_Chat[:, i], C[:, i]) *args.attr_loss_weight)
+                concept_loss = c_criterion(Chat,C) 
+                concept_aux_loss = c_criterion(aux_Chat,C) 
 
-                
-                main_loss = sum(main_losses)
-                aux_loss = sum(aux_losses)
+                #Calculate the main loss as y loss * lambda *sum (concept losses))
+                main_loss = class_loss + concept_loss* args.attr_loss_weight
+                aux_loss = class_aux_loss + concept_aux_loss* args.attr_loss_weight
 
                 loss = main_loss + 0.4 * aux_loss
                 trakker.update_loss("train",main_loss) #log main loss
             else:
                 Chat,Yhat = model(X)
 
-                losses = []
-
                 #Calculate y loss
                 main_loss = y_criterion(Yhat, Y)
-                losses.append(main_loss)
 
-                for i in range(len(c_criterion)):
-                    losses.append(args.attr_loss_weight * c_criterion[i](Chat[:, i], C[:, i]))
-                
-                loss = sum(losses)
+                #Calculate the atribute loss by looping over each prediction, and multiply by lambda
+                concept_loss = c_criterion(Chat,C)
+
+                loss = main_loss + concept_loss* args.attr_loss_weight
+
                 trakker.update_loss("train",loss)
 
             #Backward pass
@@ -462,7 +435,7 @@ def train_X_to_C_to_y(args):
 
             #Calculate accuracy
             trakker.update_class_accuracy("train",Yhat, Y)
-            trakker.update_concept_accuracy("train",Chat, C)
+            trakker.update_concept_accuracy("train",torch.sigmoid(Chat), C)
             
         #Evaluate the model
         if not args.ckpt:
@@ -477,19 +450,19 @@ def train_X_to_C_to_y(args):
                     #Forward pass
                     Chat,Yhat = model(X)
 
-                    losses = []
 
                     #Calculate y loss
-                    loss_main = y_criterion(Yhat, Y)
-                    losses.append(loss_main)
+                    class_loss = y_criterion(Yhat, Y)
 
-                    for i in range(len(c_criterion)):
-                        losses.append(args.attr_loss_weight * c_criterion[i](Chat[:, i], C[:, i]))
+                    #Caluate c loss
+                    concept_loss = c_criterion(Chat,C)
+
+                    loss = class_loss + concept_loss* args.attr_loss_weight
                     
                     #Calculate concept prediction accuracy
-                    trakker.update_concept_accuracy("val",Chat, C)
+                    trakker.update_concept_accuracy("val",torch.sigmoid(Chat), C)
                     trakker.update_class_accuracy("val",Yhat, Y)
-                    trakker.update_loss("val",sum(losses))
+                    trakker.update_loss("val",sum(loss))
 
             val_loss = trakker.get_loss_metrics("val")['avg_loss']
             val_acc = trakker.get_class_metrics("val")['top1_accuracy'] #Acuracy of class prediction

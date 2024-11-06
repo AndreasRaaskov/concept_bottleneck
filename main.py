@@ -34,6 +34,9 @@ def get_device(cfg):
 @hydra.main(version_base=None, config_path="config", config_name="config")
 def main(args: DictConfig):
 
+    # Set the seed
+    torch.manual_seed(args.seed)
+
     args.log_dir = Path(HydraConfig.get().run.dir) # put the log files in the same directory as the output
 
     
