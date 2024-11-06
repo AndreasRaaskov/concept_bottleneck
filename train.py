@@ -52,7 +52,7 @@ def train_X_to_C(args):
     
     if args.ckpt:
         #train checkpointed model
-        train_data = CUB_dataset(mode='cktp',config_dict=args.CUB_dataloader, transform=train_transform)
+        train_data = CUB_dataset(mode='ckpt',config_dict=args.CUB_dataloader, transform=train_transform)
         train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
         val_loader = None
 
@@ -226,7 +226,7 @@ def train_C_to_Y(args,XtoC_model=None):
     #define the data loaders
     if args.ckpt:
         #train checkpointed model
-        train_data = CUB_CtoY_dataset(mode='cktp',config_dict=args.CUB_dataloader, model=XtoC_model) #If XtoC model is provided, use it to generate the concepts
+        train_data = CUB_CtoY_dataset(mode='ckpt',config_dict=args.CUB_dataloader, model=XtoC_model) #If XtoC model is provided, use it to generate the concepts
         train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
         val_loader = None
     else:
@@ -363,7 +363,7 @@ def train_X_to_C_to_y(args):
     
     if args.ckpt:
         #train checkpointed model
-        train_data = CUB_dataset(mode='cktp',config_dict=args.CUB_dataloader, transform=train_transform)
+        train_data = CUB_dataset(mode='ckpt',config_dict=args.CUB_dataloader, transform=train_transform)
         train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
         val_loader = None
 
@@ -544,7 +544,7 @@ def train_X_to_y(args):
     
     if args.ckpt:
         #train checkpointed model
-        train_data = CUB_dataset(mode='cktp',config_dict=args.CUB_dataloader, transform=train_transform)
+        train_data = CUB_dataset(mode='ckpt',config_dict=args.CUB_dataloader, transform=train_transform)
         train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
         val_loader = None
 

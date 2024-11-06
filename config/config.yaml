@@ -53,7 +53,7 @@ concept_model: "inception"  # Type of model for concept prediction (e.g., "incep
 pretrained: True  # Whether to use pretrained weights for the concept model
 ckpt: True  #  if true combine train and val data to train the model
 freeze: false  # Whether to freeze the bottom part of the inception network
-
+use_aux: True
 
 #output directorys
 log_dir: None  # Directory to save logs and model checkpoints
