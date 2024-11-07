@@ -272,7 +272,15 @@ class CUB_CtoY_dataset(CUB_dataset):
         """
         return_mode: str, 
         """
+
+        #Generate a dataset according to the config_dict
         super().__init__(mode,config_dict)
+
+        #Overwrite the concepts if a model is given
+        if model:
+            self.concepts = self.generate_concept(model,device)
+
+            self.majority_voting = False #Majority voting is not relevant for the C to Y model
 
 
     def generate_concept_mask(self,model,device,hard_concept:bool = False):
