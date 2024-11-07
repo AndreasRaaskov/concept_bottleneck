@@ -1,0 +1,23 @@
+[
+  {
+    "epoch": 1197,
+    "timestamp": "2024-11-06 18:30:36.614733",
+    "metrics": {
+      "test": {
+        "class_metrics": {
+          "top1_accuracy": 0.11352253756260434,
+          "top5_accuracy": 0.164440734557596
+        },
+        "concept_metrics": {
+          "accuracy": 0.758779513474839,
+          "precision": 0.4760906528777397,
+          "recall": 0.6742981559067067,
+          "f1": 0.558119214701144
+        },
+        "sailency_scores": {
+          "sailency_scores": 0.8092776074921817
+        }
+      }
+    }
+  }
+]

@@ -5,7 +5,7 @@ experiment_name: "bird_classification"  # Name of the experiment for logging pur
 #Meta
 name: "CUB"  # Name of the dataset (currently supports "CUB" for Caltech-UCSD Birds)
 seed: 1 # Random seed
-mode: Sequential #"Standard", "Independent", "Joint", "Sequential","end"  # List of training modes to iterate over
+mode: Joint #"Standard", "Independent", "Joint", "Sequential","end"  # List of training modes to iterate over
 device: "auto"  # Device to use for training ("auto" for automatic detection, "cuda" for GPU, "cpu" for CPU)
 
 
@@ -31,20 +31,20 @@ CUB_dataloader: # Paremeter for the CUB dataloader
 
 
 #training
-batch_size: 32
+batch_size: 64
 epochs: 2000 #2000  # Number of training epochs
-lr: 0.001  # Initial learning rate for optimization
+lr: 0.01  # Initial learning rate for optimization
 optimizer: 'SGD' # Optimizer to use for training (e.g., "Adam", "SGD", "RMSprop")
 momentum: 0.9  # Momentum factor for SGD optimizer
-weight_decay: 5e-5  # Weight decay (L2 penalty) for optimization
-lambda1: 0.1  # Weighting factor for concept loss in joint training
-scheduler_step: 1000  # Number of steps before decaying current learning rate by half
+weight_decay: 0.0004  # Weight decay (L2 penalty) for optimization
+lambda1: 0.01  # Weighting factor for concept loss in joint training
+scheduler_step: 5  # Number of steps before decaying current learning rate by half
 min_lr: 0.0001  # Minimum learning rate
-lr_decay_size: 0.1  # Learning rate decay factor
+lr_decay_size: 0.01  # Learning rate decay factor
 weighted_loss: False # 'Whether to use weighted the positive loss for concept prediction
 attr_loss_weight: 0.1 # Lambda for attribute loss in the joint training
 #normalize_loss: False # Whether to normalize loss by taking attr_loss_weight into account
-transform_method: "resize" # Transformation method for the concept bottleneck model ("original","resized","center")
+transform_method: "original" # Transformation method for the concept bottleneck model ("original","resized","center")
 
 
 

@@ -22,6 +22,11 @@ def get_saliency_maps(img, target_classes,model, method_type='vanilla'):
                            Default is 'vanilla'.
     """
 
+    #Ensure all input is on the same device as the model
+    device = next(model.parameters()).device
+    img = img.to(device)
+    target_classes = torch.tensor(target_classes, device=device)
+
     # Load and preprocess the image
     img.requires_grad_(True)
 
@@ -36,7 +41,6 @@ def get_saliency_maps(img, target_classes,model, method_type='vanilla'):
     else:
         raise ValueError("Invalid method_type. Choose from 'vanilla', 'noise_tunnel', or 'gradcam'.")
 
-    
     
     # Create a batch by repeating the input image
     batched_input = img.repeat(len(target_classes), 1, 1, 1)

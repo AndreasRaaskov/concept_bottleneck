@@ -91,7 +91,7 @@ def main(cfg: DictConfig):
                 C_hat = XtoC_model(X)
                 Y_hat = CtoY_model(C_hat)
 
-            if cfg.CUB_mask.use:
+            if cfg.CUB_mask.use and C_hat.shape != C.shape:
                 #Only evaluated masked concepts
                 C_hat = C_hat[..., mask]
 
@@ -102,11 +102,20 @@ def main(cfg: DictConfig):
         #Update the class logger
         logger.update_class_accuracy(mode="test",logits=Y_hat, correct_label=Y)
 
+    #Calulate sailency score
     if cfg.sailency == True and cfg.mode != "Standard":
+
+        if cfg.mode == "Joint":
+            model.set_sailency_output("C")
+        else:
+            model = XtoC_model
 
         for i in tqdm.tqdm(range(len(data_set))):
 
             X, C, Y , coordinates = data_set[i]
+
+            X = X.unsqueeze(0)
+
 
             if cfg.CUB_mask.use:
                 #Apply the mask

@@ -1,14 +1,14 @@
 
-mode: Joint #"Standard", "Independent", "Joint", "Sequential","end"  # List of training modes to iterate over
+mode: "Standard" #"Standard", "Independent", "Joint", "Sequential","end"  # List of training modes to iterate over
 
 
 
-joint_path: "models/Joint_Basemodel2/best_Joint_model.pth"  # Path to the joint model
+joint_path: "models/Joint_Basemodel3/best_Joint_model.pth"  # Path to the joint model
 
-XtoC_path: "models/Joint_Basemodel2/best_XtoC_model.pth"  # Path to first part of sequential and independent model
-CtoY_path: "models/Joint_Basemodel2/best_CtoY_model.pth"  # Path to second part of sequential and independent model
+XtoC_path: "models/Sequential_Basemodel3/best_XtoC_model.pth"  # Path to first part of sequential and independent model
+CtoY_path: "models/Sequential_Basemodel3/best_CtoY_model.pth"  # Path to second part of sequential and independent model
 
-XtoY_path: "models/Joint_Basemodel2/best_XtoY_model.pth"  # Path to the model directory
+XtoY_path: "models/Standard_Baselinemodel1/CtoY_log.json"  # Path to the model directory
 
 output_dir: "results"  # Directory to save evaluation results if blank will use the model directory
 
