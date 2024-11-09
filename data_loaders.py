@@ -536,6 +536,31 @@ if __name__ == "__main__":
     #Check if there is 200 classes
     assert len(dataset.__getitem__(0)[1]) == 200
 
+    #Test CtoY ability to generate new concepts
+
+    class DummyModel(torch.nn.Module):
+        #A dummy model that returns a tensor of ones
+        def __init__(self,n_concepts):
+            super().__init__()
+            self.n_concepts = n_concepts
+            
+        def forward(self,x):
+            #Return a tensor of ones
+            return torch.ones(x.shape[0],self.n_concepts)
+        
+    model = DummyModel(312)
+
+    dataset = CUB_CtoY_dataset('val',config_dict,transform,model)
+
+    #assert the length of the dataset is the same as the original
+    assert len(dataset) == len(original)
+
+    #Check if ther is 312 concepts
+    assert len(dataset.__getitem__(0)[0]) == 312
+
+    #Check if all the concepts are ones
+    assert dataset.__getitem__(0)[0].all() == 1
+
 
         
             
