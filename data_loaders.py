@@ -272,38 +272,55 @@ class CUB_CtoY_dataset(CUB_dataset):
         """
         return_mode: str, 
         """
-
+        self.transfrom = transform
         #Generate a dataset according to the config_dict
         super().__init__(mode,config_dict)
 
         #Overwrite the concepts if a model is given
         if model:
+            print(self.concepts.shape)
             self.concepts = self.generate_concept(model,device)
-
+            print(len(self.concepts))
             self.majority_voting = False #Majority voting is not relevant for the C to Y model
 
 
-    def generate_concept_mask(self,model,device,hard_concept:bool = False):
+    def generate_concept(self, model, device, batch_size=32, hard_concept: bool = False):
         """
-        Function to generate the concepts given an x to c model
+        Function to generate the concepts given an x to c model using batch processing
+        
+        Args:
+            model: The neural network model
+            device: The device to run computations on (cpu/cuda)
+            hard_concept: Whether to round the output to binary values
+        
+        Returns:
+            List of generated concepts
         """
+
         new_concepts = []
 
         model.eval()
 
         #Iterate over the dataset
         for idx in range(len(self)):
-            X, _, _ = super().__getitem__(idx) # Get the image from parent class
-            X = X.unsqueeze(0)
-            X = X.to(device)
-            with torch.no_grad():
-                output = model(X)
+                img_id = self.data_id[idx]
+
+                img_path = self.image_paths[img_id]
+                X = Image.open(img_path).convert('RGB')
+
+                X = self.transform(X)
                 
+
+                X = X.unsqueeze(0).to(device)
+
+                with torch.no_grad():
+                    output = model(X)
+        
                 #Round the output if hard_concept is True
                 if hard_concept:
                     output = torch.round(output)
 
-            new_concepts.append(output.cpu().numpy())
+                new_concepts.append(output.cpu().numpy())
 
         return new_concepts
 
