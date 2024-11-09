@@ -272,15 +272,12 @@ class CUB_CtoY_dataset(CUB_dataset):
         """
         return_mode: str, 
         """
-        self.transfrom = transform
         #Generate a dataset according to the config_dict
-        super().__init__(mode,config_dict)
+        super().__init__(mode,config_dict,transform)
 
         #Overwrite the concepts if a model is given
         if model:
-            print(self.concepts.shape)
             self.concepts = self.generate_concept(model,device)
-            print(len(self.concepts))
             self.majority_voting = False #Majority voting is not relevant for the C to Y model
 
 
@@ -297,7 +294,7 @@ class CUB_CtoY_dataset(CUB_dataset):
             List of generated concepts
         """
 
-        new_concepts = []
+        new_concepts = {}
 
         model.eval()
 
@@ -320,7 +317,8 @@ class CUB_CtoY_dataset(CUB_dataset):
                 if hard_concept:
                     output = torch.round(output)
 
-                new_concepts.append(output.cpu().numpy())
+                #return new concepts as torch tensor
+                new_concepts[img_id]=output.squeeze(0).cpu()
 
         return new_concepts
 
@@ -525,7 +523,7 @@ if __name__ == "__main__":
 
     
     #Check if it works witout majority voting
-    config_dict = {'CUB_dir':r'data/CUB_200_2011','split_file':r'data\train_test_val.pkl','use_majority_voting':False,'min_class_count':10,'return_visibility':False}
+    config_dict = {'CUB_dir':r'data/CUB_200_2011','split_file':r'data\train_test_val.pkl','use_majority_voting':True,'min_class_count':0,'return_visibility':False}
     transform = transforms.Compose([transforms.Resize((299,299)),transforms.ToTensor()])
     dataset = CUB_dataset('val',config_dict,transform)
 
@@ -564,7 +562,9 @@ if __name__ == "__main__":
         def forward(self,x):
             #Return a tensor of ones
             return torch.ones(x.shape[0],self.n_concepts)
-        
+    
+    from models import get_inception_transform
+    transform = get_inception_transform(mode='val')
     model = DummyModel(312)
 
     dataset = CUB_CtoY_dataset('val',config_dict,transform,model)
