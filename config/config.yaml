@@ -25,7 +25,7 @@ CUB_dataloader: # Paremeter for the CUB dataloader
   return_concepts: False # Whether to return concept labels
   return_visibility: False # Whether to return visibility labels can not be used with majority voting if return_concepts is True the dataloader will return a tuple of (concept_labels, visibility_labels)
 
-  use_majority_voting: False # Whether to use majority voting for concepts labels
+  use_majority_voting: True # Whether to use majority voting for concepts labels
   min_class_count: 10 # apply the filer that removes concepts present in less than min_class_count classes only relevant after majority voting if false use all 320 concepts
   hard_concept: False # Only used when making new dataset by using XtoC model make new C binary, else it is sigmoid. 
 
@@ -33,9 +33,9 @@ CUB_dataloader: # Paremeter for the CUB dataloader
 
 #training
 batch_size: 64
-epochs: 2000 #2000  # Number of training epochs
-lr: 0.01  # Initial learning rate for optimization
-optimizer: 'SGD' # Optimizer to use for training (e.g., "Adam", "SGD", "RMSprop")
+epochs: 10 #2000  # Number of training epochs
+lr: 0.001  # Initial learning rate for optimization
+optimizer: 'Adam' # Optimizer to use for training (e.g., "Adam", "SGD", "RMSprop")
 momentum: 0.9  # Momentum factor for SGD optimizer
 weight_decay: 0.0004  # Weight decay (L2 penalty) for optimization
 lambda1: 0.01  # Weighting factor for concept loss in joint training
@@ -43,9 +43,9 @@ scheduler_step: 5  # Number of steps before decaying current learning rate by ha
 min_lr: 0.0001  # Minimum learning rate
 lr_decay_size: 0.01  # Learning rate decay factor
 weighted_loss: False # 'Whether to use weighted the positive loss for concept prediction
-attr_loss_weight: 0.1 # Lambda for attribute loss in the joint training
+attr_loss_weight: 0.01 # Lambda for attribute loss in the joint training
 #normalize_loss: False # Whether to normalize loss by taking attr_loss_weight into account
-transform_method: "original" # Transformation method for the concept bottleneck model ("original","resized","center")
+transform_method: "resize" # Transformation method for the concept bottleneck model ("original","resize","center")
 
 
 

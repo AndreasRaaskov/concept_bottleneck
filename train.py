@@ -76,9 +76,9 @@ def train_X_to_C(args):
     if args.weighted_loss:
         imbalance = train_data.calculate_imbalance()
         pos_weights = torch.tensor(imbalance).to(device)
-        c_criterion = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weights,reduction='mean')
+        c_criterion = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weights,reduction='sum')
     else:
-        c_criterion = torch.nn.BCEWithLogitsLoss(reduction='mean')
+        c_criterion = torch.nn.BCEWithLogitsLoss(reduction='sum')
             
     #Define the optimizer
     optimizer, scheduler = get_optimizer(model, args)
