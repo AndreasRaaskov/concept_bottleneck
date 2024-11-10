@@ -277,7 +277,7 @@ class CUB_CtoY_dataset(CUB_dataset):
 
         #Overwrite the concepts if a model is given
         if model:
-            self.concepts = self.generate_concept(model,device, hard_concept = config_dict.hard_concept)
+            self.concepts = self.generate_concept(model,device, hard_concept = config_dict["hard_concept"])
             self.majority_voting = False #Majority voting is not relevant for the C to Y model
 
 
@@ -333,7 +333,6 @@ class CUB_CtoY_dataset(CUB_dataset):
                 outputs = outputs.cpu().numpy()
                 for idx, img_id in enumerate(batch_ids):
                     new_concepts[img_id] = outputs[idx]
-                    print(np.round(outputs[idx], 4))
         
         return new_concepts
 
@@ -503,7 +502,7 @@ if __name__ == "__main__":
 
     original = pickle.load(open(r'data\CUB_processed\Original\train.pkl','rb'))
 
-    config_dict = {'CUB_dir':r'data/CUB_200_2011','split_file':r'data\train_test_val.pkl','use_majority_voting':True,'min_class_count':10,'return_visibility':True}
+    config_dict = {'CUB_dir':r'data/CUB_200_2011','split_file':r'data\train_test_val.pkl','use_majority_voting':True,'min_class_count':10,'return_visibility':True,'hard_concept':False}
     transform = transforms.Compose([transforms.Resize((299,299)),transforms.ToTensor()])
     dataset = CUB_dataset('train',config_dict,transform)
     
@@ -538,7 +537,7 @@ if __name__ == "__main__":
 
     
     #Check if it works witout majority voting
-    config_dict = {'CUB_dir':r'data/CUB_200_2011','split_file':r'data\train_test_val.pkl','use_majority_voting':True,'min_class_count':0,'return_visibility':False}
+    config_dict = {'CUB_dir':r'data/CUB_200_2011','split_file':r'data\train_test_val.pkl','use_majority_voting':True,'min_class_count':0,'return_visibility':False,'hard_concept':False}
     transform = transforms.Compose([transforms.Resize((299,299)),transforms.ToTensor()])
     dataset = CUB_dataset('val',config_dict,transform)
 
@@ -553,7 +552,7 @@ if __name__ == "__main__":
 
 
     dataset = CUB_extnded_dataset('val',config_dict,transform)
-    print(dataset.calculate_imbalance())
+
 
     dataset = CUB_CtoY_dataset('val',config_dict,transform)
 
