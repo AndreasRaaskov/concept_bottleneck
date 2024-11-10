@@ -206,14 +206,17 @@ def train_C_to_Y(args,XtoC_model=None):
 
     device = torch.device(args.device)
 
+    #Get the validation tranformation
+    transform = get_inception_transform(mode="val",methode=args.transform_method)
+
     #define the data loaders
     if args.ckpt:
         #train checkpointed model
-        train_data = CUB_CtoY_dataset(mode='ckpt',config_dict=args.CUB_dataloader, model=XtoC_model) #If XtoC model is provided, use it to generate the concepts
+        train_data = CUB_CtoY_dataset(mode='ckpt',config_dict=args.CUB_dataloader,transform=transform, model=XtoC_model) #If XtoC model is provided, use it to generate the concepts
         train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
         val_loader = None
     else:
-        train_data = CUB_CtoY_dataset(mode='train',config_dict=args.CUB_dataloader, model=XtoC_model)
+        train_data = CUB_CtoY_dataset(mode='train',config_dict=args.CUB_dataloader,transform=transform, model=XtoC_model)
         val_data = CUB_CtoY_dataset(mode='val',config_dict=args.CUB_dataloader)
 
         train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)

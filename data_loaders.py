@@ -272,31 +272,68 @@ class CUB_CtoY_dataset(CUB_dataset):
         """
         return_mode: str, 
         """
-        super().__init__(mode,config_dict)
+        #Generate a dataset according to the config_dict
+        super().__init__(mode,config_dict,transform)
+
+        #Overwrite the concepts if a model is given
+        if model:
+            self.concepts = self.generate_concept(model,device, hard_concept = config_dict["hard_concept"])
+            self.majority_voting = False #Majority voting is not relevant for the C to Y model
 
 
-    def generate_concept_mask(self,model,device,hard_concept:bool = False):
+    def generate_concept(self, model, device, batch_size=64, hard_concept: bool = False):
         """
-        Function to generate the concepts given an x to c model
+        Function to generate the concepts given an x to c model using batch processing
+        
+        Args:
+            model: The neural network model
+            device: The device to run computations on (cpu/cuda)
+            hard_concept: Whether to round the output to binary values
+        
+        Returns:
+            List of generated concepts
         """
-        new_concepts = []
-
+        new_concepts = {}
+        model.to(device)
         model.eval()
-
-        #Iterate over the dataset
-        for idx in range(len(self)):
-            X, _, _ = super().__getitem__(idx) # Get the image from parent class
-            X = X.unsqueeze(0)
-            X = X.to(device)
-            with torch.no_grad():
-                output = model(X)
+        
+        # Calculate number of batches
+        n_samples = len(self)
+        n_batches = (n_samples + batch_size - 1) // batch_size  # Ceiling division
+        
+        with torch.no_grad():
+            for batch_idx in range(n_batches):
+                # Calculate indices for current batch
+                start_idx = batch_idx * batch_size
+                end_idx = min(start_idx + batch_size, n_samples)
                 
-                #Round the output if hard_concept is True
+                # Process all images in current batch
+                batch_images = []
+                batch_ids = []
+                
+                for idx in range(start_idx, end_idx):
+                    img_id = self.data_id[idx]
+                    img_path = self.image_paths[img_id]
+                    X = Image.open(img_path).convert('RGB')
+                    X = self.transform(X)
+                    batch_images.append(X)
+                    batch_ids.append(img_id)
+                
+                # Stack images into a batch
+                batch_tensor = torch.stack(batch_images).to(device)
+                
+                # Get model outputs for the batch
+                outputs = model(batch_tensor)
+                
+                # Round if hard_concept is True
                 if hard_concept:
-                    output = torch.round(output)
-
-            new_concepts.append(output.cpu().numpy())
-
+                    outputs = torch.round(outputs)
+                
+                # Store results
+                outputs = outputs.cpu().numpy()
+                for idx, img_id in enumerate(batch_ids):
+                    new_concepts[img_id] = outputs[idx]
+        
         return new_concepts
 
     def __getitem__(self, idx):
@@ -465,7 +502,7 @@ if __name__ == "__main__":
 
     original = pickle.load(open(r'data\CUB_processed\Original\train.pkl','rb'))
 
-    config_dict = {'CUB_dir':r'data/CUB_200_2011','split_file':r'data\train_test_val.pkl','use_majority_voting':True,'min_class_count':10,'return_visibility':True}
+    config_dict = {'CUB_dir':r'data/CUB_200_2011','split_file':r'data\train_test_val.pkl','use_majority_voting':True,'min_class_count':10,'return_visibility':True,'hard_concept':False}
     transform = transforms.Compose([transforms.Resize((299,299)),transforms.ToTensor()])
     dataset = CUB_dataset('train',config_dict,transform)
     
@@ -500,7 +537,7 @@ if __name__ == "__main__":
 
     
     #Check if it works witout majority voting
-    config_dict = {'CUB_dir':r'data/CUB_200_2011','split_file':r'data\train_test_val.pkl','use_majority_voting':False,'min_class_count':10,'return_visibility':False}
+    config_dict = {'CUB_dir':r'data/CUB_200_2011','split_file':r'data\train_test_val.pkl','use_majority_voting':True,'min_class_count':0,'return_visibility':False,'hard_concept':False}
     transform = transforms.Compose([transforms.Resize((299,299)),transforms.ToTensor()])
     dataset = CUB_dataset('val',config_dict,transform)
 
@@ -515,7 +552,7 @@ if __name__ == "__main__":
 
 
     dataset = CUB_extnded_dataset('val',config_dict,transform)
-    print(dataset.calculate_imbalance())
+
 
     dataset = CUB_CtoY_dataset('val',config_dict,transform)
 
@@ -527,6 +564,33 @@ if __name__ == "__main__":
 
     #Check if there is 200 classes
     assert len(dataset.__getitem__(0)[1]) == 200
+
+    #Test CtoY ability to generate new concepts
+
+    class DummyModel(torch.nn.Module):
+        #A dummy model that returns a tensor of ones
+        def __init__(self,n_concepts):
+            super().__init__()
+            self.n_concepts = n_concepts
+            
+        def forward(self,x):
+            #Return a tensor of ones
+            return torch.ones(x.shape[0],self.n_concepts)
+    
+    from models import get_inception_transform
+    transform = get_inception_transform(mode='val')
+    model = DummyModel(312)
+
+    dataset = CUB_CtoY_dataset('val',config_dict,transform,model)
+
+    #assert the length of the dataset is the same as the original
+    assert len(dataset) == len(original)
+
+    #Check if ther is 312 concepts
+    assert len(dataset.__getitem__(0)[0]) == 312
+
+    #Check if all the concepts are ones
+    assert dataset.__getitem__(0)[0].all() == 1
 
 
         

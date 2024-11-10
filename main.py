@@ -61,7 +61,7 @@ def main(args: DictConfig):
         train_X_to_C(args)
         train_C_to_Y(args)
         save_training_metrics(os.path.join(args.log_dir, 'XtoCtrain_log.json'),args.log_dir)
-        save_training_metrics(os.path.join(args.log_dir, 'C_TO_Y_log.json'),args.log_dir)
+        save_training_metrics(os.path.join(args.log_dir, 'CtoY_log.json'),args.log_dir)
 
     elif experiment == 'Sequential':
         XtoC_model=train_X_to_C(args)

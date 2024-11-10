@@ -27,6 +27,7 @@ CUB_dataloader: # Paremeter for the CUB dataloader
 
   use_majority_voting: False # Whether to use majority voting for concepts labels
   min_class_count: 10 # apply the filer that removes concepts present in less than min_class_count classes only relevant after majority voting if false use all 320 concepts
+  hard_concept: False # Only used when making new dataset by using XtoC model make new C binary, else it is sigmoid. 
 
 
 
