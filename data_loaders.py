@@ -277,11 +277,11 @@ class CUB_CtoY_dataset(CUB_dataset):
 
         #Overwrite the concepts if a model is given
         if model:
-            self.concepts = self.generate_concept(model,device)
+            self.concepts = self.generate_concept(model,device, hard_concept = config_dict.hard_concept)
             self.majority_voting = False #Majority voting is not relevant for the C to Y model
 
 
-    def generate_concept(self, model, device, batch_size=32, hard_concept: bool = False):
+    def generate_concept(self, model, device, batch_size=64, hard_concept: bool = False):
         """
         Function to generate the concepts given an x to c model using batch processing
         
@@ -293,35 +293,48 @@ class CUB_CtoY_dataset(CUB_dataset):
         Returns:
             List of generated concepts
         """
-
-        #New concept dict. 
         new_concepts = {}
-
         model.to(device)
         model.eval()
-
-        #Iterate over the dataset
-        for idx in range(len(self)):
-                img_id = self.data_id[idx]
-
-                img_path = self.image_paths[img_id]
-                X = Image.open(img_path).convert('RGB')
-
-                X = self.transform(X)
-                
-
-                X = X.unsqueeze(0).to(device)
-
-                with torch.no_grad():
-                    output = model(X)
         
-                #Round the output if hard_concept is True
+        # Calculate number of batches
+        n_samples = len(self)
+        n_batches = (n_samples + batch_size - 1) // batch_size  # Ceiling division
+        
+        with torch.no_grad():
+            for batch_idx in range(n_batches):
+                # Calculate indices for current batch
+                start_idx = batch_idx * batch_size
+                end_idx = min(start_idx + batch_size, n_samples)
+                
+                # Process all images in current batch
+                batch_images = []
+                batch_ids = []
+                
+                for idx in range(start_idx, end_idx):
+                    img_id = self.data_id[idx]
+                    img_path = self.image_paths[img_id]
+                    X = Image.open(img_path).convert('RGB')
+                    X = self.transform(X)
+                    batch_images.append(X)
+                    batch_ids.append(img_id)
+                
+                # Stack images into a batch
+                batch_tensor = torch.stack(batch_images).to(device)
+                
+                # Get model outputs for the batch
+                outputs = model(batch_tensor)
+                
+                # Round if hard_concept is True
                 if hard_concept:
-                    output = torch.round(output)
-
-                #return new concepts as numpy for code consitancy
-                new_concepts[img_id] = output.squeeze(0).cpu().numpy()
-
+                    outputs = torch.round(outputs)
+                
+                # Store results
+                outputs = outputs.cpu().numpy()
+                for idx, img_id in enumerate(batch_ids):
+                    new_concepts[img_id] = outputs[idx]
+                    print(np.round(outputs[idx], 4))
+        
         return new_concepts
 
     def __getitem__(self, idx):
