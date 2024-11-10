@@ -294,8 +294,10 @@ class CUB_CtoY_dataset(CUB_dataset):
             List of generated concepts
         """
 
+        #New concept dict. 
         new_concepts = {}
 
+        model.to(device)
         model.eval()
 
         #Iterate over the dataset
@@ -317,8 +319,8 @@ class CUB_CtoY_dataset(CUB_dataset):
                 if hard_concept:
                     output = torch.round(output)
 
-                #return new concepts as torch tensor
-                new_concepts[img_id]=output.squeeze(0).cpu()
+                #return new concepts as numpy for code consitancy
+                new_concepts[img_id] = output.squeeze(0).cpu().numpy()
 
         return new_concepts
 

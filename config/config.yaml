@@ -32,7 +32,7 @@ CUB_dataloader: # Paremeter for the CUB dataloader
 
 #training
 batch_size: 32
-epochs: 5 #2000  # Number of training epochs
+epochs: 200 #2000  # Number of training epochs
 lr: 0.001  # Initial learning rate for optimization
 optimizer: 'Adam' # Optimizer to use for training (e.g., "Adam", "SGD", "RMSprop")
 momentum: 0.9  # Momentum factor for SGD optimizer
