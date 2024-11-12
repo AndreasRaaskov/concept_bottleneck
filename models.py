@@ -80,7 +80,7 @@ class ModelCtoY(nn.Module):
 class ModelXtoCtoY(nn.Module):
     
 
-    def __init__(self, pretrained, freeze, n_classes, use_aux, n_concepts,use_sigmoid=True):
+    def __init__(self, pretrained, freeze, n_classes, use_aux, n_concepts):
         """
         Model used for the X -> C -> Y part of the Joint model
 
@@ -93,28 +93,26 @@ class ModelXtoCtoY(nn.Module):
             use_sigmoid (bool): If True, uses sigmoid activation function for the output layer must be false in training since BCEWithLogitsLoss is used
         """
 
-        self.use_sigmoid = use_sigmoid
-
         super(ModelXtoCtoY, self).__init__()
 
         self.sailency_output = False
 
         self.use_aux = use_aux
 
-        self.CNN_model = inception_v3(weights=Inception_V3_Weights.IMAGENET1K_V1 if pretrained else None, aux_logits=use_aux)# Load the inception model
+        self.XtoC_model = ModelXtoC(pretrained, freeze,use_aux, n_concepts)
 
-        self.CNN_model.fc = nn.Linear(2048, n_concepts) # Change the last layer to output the number of concepts
+        self.XtoC_model.fc = nn.Linear(2048, n_concepts) # Change the last layer to output the number of concepts
 
         self.activation = nn.Sigmoid() # Use sigmoid activation function
 
-        self.MLP_model = ModelCtoY(n_concepts, n_classes) # Create the MLP model for the C -> Y
+        self.CtoY_model = ModelCtoY(n_concepts, n_classes) # Create the MLP model for the C -> Y
 
         if use_aux: #Make and auxilary model for the C -> Y
-            self.CNN_model.AuxLogits.fc = nn.Linear(768, n_concepts)
-            self.aux_MLP_model = ModelCtoY(n_concepts, n_classes)
+            #self.XtoC_model.AuxLogits.fc = nn.Linear(768, n_concepts)
+            self.aux_CtoY_model = ModelCtoY(n_concepts, n_classes)
         
         if freeze:  # only finetune fc layer
-            for name, param in self.CNN_model.named_parameters():
+            for name, param in self.XtoC_model.named_parameters():
                 if 'fc' not in name:  # and 'Mixed_7c' not in name:
                     param.requires_grad = False
 
@@ -124,30 +122,20 @@ class ModelXtoCtoY(nn.Module):
         """
 
         if self.use_aux and self.training:
-            Chat, aux_Chat = self.CNN_model(x)
+            Chat, aux_Chat = self.XtoC_model(x)
 
-            if self.use_sigmoid:
-                Chat = self.activation(Chat)
-                Yhat = self.MLP_model(Chat)
 
-                aux_Chat = self.activation(aux_Chat)
-                aux_Yhat = self.aux_MLP_model(aux_Chat)
-
-            else:
-                #still use sigmoid for Y but not for C
-                Yhat = self.MLP_model(self.activation(Chat))
-                aux_Yhat = self.aux_MLP_model(self.activation(aux_Chat))
+            #Apply activation before final layer
+            Yhat = self.CtoY_model(self.activation(Chat))
+            aux_Yhat = self.aux_CtoY_model(self.activation(aux_Chat))
             
             return Chat, Yhat, aux_Chat, aux_Yhat
         
         else:
-            Chat = self.CNN_model(x)
+            Chat = self.XtoC_model(x)
 
-            if self.use_sigmoid:
-                Chat = self.activation(Chat)
-                Yhat = self.MLP_model(Chat)
-            else:
-                Yhat = self.MLP_model(self.activation(Chat))
+            #Apply activation before final layer
+            Yhat = self.CtoY_model(self.activation(Chat))
 
             if not self.sailency_output: #If we are not interested in the sailency map
                 return Chat, Yhat
