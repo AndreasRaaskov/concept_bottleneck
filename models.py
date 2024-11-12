@@ -16,7 +16,7 @@ from  torchvision.models import inception_v3,Inception_V3_Weights
 
 # Independent & Sequential Model
 class ModelXtoC(nn.Module):
-    def __init__(self,pretrained, freeze,use_aux, n_concepts,use_sigmoid=True):
+    def __init__(self,pretrained, freeze,use_aux, n_concepts):
         """
         Model used for the X -> C part of the Independent and Sequential models
 
@@ -29,7 +29,6 @@ class ModelXtoC(nn.Module):
         
         """
 
-        self.use_sigmoid = use_sigmoid
         super(ModelXtoC, self).__init__()
 
         self.use_aux = use_aux
@@ -55,16 +54,11 @@ class ModelXtoC(nn.Module):
         if self.use_aux and self.training:
             Chat, aux_Chat = self.model(x)
 
-            if self.use_sigmoid:
-                Chat = self.activation(Chat)
-                aux_Chat = self.activation(aux_Chat)
             return Chat, aux_Chat
         
         else:
             Chat = self.model(x)
 
-            if self.use_sigmoid:
-                Chat = self.activation(Chat)
             return Chat
 
 
@@ -78,7 +72,6 @@ class ModelCtoY(nn.Module):
 
     def forward(self, x):
         x = self.linear(x)
-        x = F.softmax(x, dim=1)
         return x
 
 
@@ -165,7 +158,6 @@ class ModelXtoCtoY(nn.Module):
                     return Chat
                 elif self.sailency_output == 'Y':
                     return Yhat 
-    
     def set_sailency_output(self, output):
         """
         Function for returning the sailency map of the model
@@ -215,13 +207,13 @@ class ModelXtoY(nn.Module):
 
         if self.use_aux and self.training:
             Yhat, aux_Yhat = self.model(x)
-            Yhat = self.activation(Yhat)
-            aux_Yhat = self.activation(aux_Yhat)
+            #Yhat = self.activation(Yhat)
+            #aux_Yhat = self.activation(aux_Yhat)
             return Yhat, aux_Yhat
         
         else:
             Yhat = self.model(x)
-            Yhat = self.activation(Yhat)
+            #Yhat = self.activation(Yhat)
             return Yhat
 
 

@@ -1,12 +1,12 @@
 
-mode: "Standard" #"Standard", "Independent", "Joint", "Sequential","end"  # List of training modes to iterate over
+mode: "Sequential" #"Standard", "Independent", "Joint", "Sequential","end"  # List of training modes to iterate over
 
 
 
-joint_path: "models/Joint_Basemodel3/best_Joint_model.pth"  # Path to the joint model
+joint_path: "models/Joint_Basemodel2/best_Joint_model.pth"  # Path to the joint model
 
-XtoC_path: "models/Sequential_Basemodel3/best_XtoC_model.pth"  # Path to first part of sequential and independent model
-CtoY_path: "models/Sequential_Basemodel3/best_CtoY_model.pth"  # Path to second part of sequential and independent model
+XtoC_path: "models/Sequential_Basemodel2/best_XtoC_model.pth"  # Path to first part of sequential and independent model
+CtoY_path: "models/Sequential_Basemodel2/best_CtoY_model.pth"  # Path to second part of sequential and independent model
 
 XtoY_path: "models/Standard_Baselinemodel1/CtoY_log.json"  # Path to the model directory
 
@@ -18,7 +18,7 @@ transform_method: "resize" # Transformation method for the concept bottleneck mo
 
 split: val # Selcet val or test
 
-sailency: True # Calulate sailency score.
+sailency: False # Calulate sailency score.
 sailency_methode: "vanilla"  
 
 CUB_dataloader: # Paremeter for the CUB dataloader
@@ -33,7 +33,7 @@ CUB_dataloader: # Paremeter for the CUB dataloader
   min_class_count: 10 # apply the filer that removes concepts present in less than min_class_count classes only relevant after majority voting if false use all 320 concepts
 
 CUB_mask: # If use is true make a data loader that makes a mask for what concept to be used. 
-  use: True
+  use: False
   CUB_dir: data/CUB_200_2011 # Path to the CUB dataset directory
   split_file: data/train_test_val.pkl # Path to the split file
 

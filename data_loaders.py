@@ -294,6 +294,7 @@ class CUB_CtoY_dataset(CUB_dataset):
             List of generated concepts
         """
         new_concepts = {}
+        model.use_sigmoid = True #Forces to model to give out sigmoid output 
         model.to(device)
         model.eval()
         
@@ -327,7 +328,7 @@ class CUB_CtoY_dataset(CUB_dataset):
                 
                 # Round if hard_concept is True
                 if hard_concept:
-                    outputs = torch.round(outputs)
+                    outputs = (outputs >= 0.5).float()
                 
                 # Store results
                 outputs = outputs.cpu().numpy()
@@ -393,7 +394,7 @@ class CUB_extnded_dataset(CUB_dataset):
 
         #If a filter was applied load the filter names.
         if self.majority_voting:
-            self.consept_labels_names= self.consept_labels_names[self.concept_mask]
+            self.consept_labels_names = self.consept_labels_names[self.concept_mask]
 
 
     def get_cordinates(self,id,img):

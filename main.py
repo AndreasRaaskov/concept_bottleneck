@@ -36,6 +36,7 @@ def main(args: DictConfig):
 
     # Set the seed
     torch.manual_seed(args.seed)
+    torch.cuda.manual_seed_all(args.seed)
 
     args.log_dir = Path(HydraConfig.get().run.dir) # put the log files in the same directory as the output
 
@@ -55,12 +56,12 @@ def main(args: DictConfig):
 
     if experiment == 'Concept':
         train_X_to_C(args)
-        save_training_metrics(os.path.join(args.log_dir, 'XtoCtrain_log.json'),args.log_dir) #Read file from Json
+        save_training_metrics(os.path.join(args.log_dir, 'XtoC_log.json'),args.log_dir) #Read file from Json
 
     elif experiment == 'Independent':
         train_X_to_C(args)
         train_C_to_Y(args)
-        save_training_metrics(os.path.join(args.log_dir, 'XtoCtrain_log.json'),args.log_dir)
+        save_training_metrics(os.path.join(args.log_dir, 'XtoC_log.json'),args.log_dir)
         save_training_metrics(os.path.join(args.log_dir, 'CtoY_log.json'),args.log_dir)
 
     elif experiment == 'Sequential':
@@ -68,13 +69,14 @@ def main(args: DictConfig):
 
         #tain the model on predictions of the previous model
         train_C_to_Y(args,XtoC_model)
-        save_training_metrics(os.path.join(args.log_dir, 'XtoCtrain_log.json'),args.log_dir)
+        save_training_metrics(os.path.join(args.log_dir, 'XtoC_log.json'),args.log_dir)
         save_training_metrics(os.path.join(args.log_dir, 'CtoY_log.json'),args.log_dir)
         
 
     elif experiment == 'Joint':
         train_X_to_C_to_y(args)
-        save_training_metrics(os.path.join(args.log_dir, 'train_log.json'),args.log_dir)
+        save_training_metrics(os.path.join(args.log_dir, 'XtoC_log.json'),args.log_dir)
+        save_training_metrics(os.path.join(args.log_dir, 'CtoY_log.json'),args.log_dir)
 
     elif experiment == 'Standard':
         train_X_to_y(args)

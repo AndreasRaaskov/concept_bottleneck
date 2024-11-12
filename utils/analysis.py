@@ -167,6 +167,115 @@ class TrainingLogger:
             formatted += "\n"
         return formatted
 
+
+class ConceptLogger:
+    def __init__(self, concept_names: list[str], log_file: str = 'concept_metrics.json'):
+        """
+        Initialize the concept logger with a list of concept names.
+        
+        Args:
+            concept_names: List of strings representing the names of concepts to track
+            log_file: Path where the JSON results will be saved
+        """
+        self.concept_names = concept_names
+        self.log_file = log_file
+        self.reset()
+
+    def reset(self):
+        """Reset all accumulated data"""
+        self.concept_stats = {
+            concept: {
+                'true_positives': 0,
+                'true_negatives': 0,
+                'false_positives': 0,
+                'false_negatives': 0,
+                'total_samples': 0
+            } for concept in self.concept_names
+        }
+
+    def update(self, predictions: torch.Tensor, ground_truth: torch.Tensor):
+        """
+        Update statistics for all concepts based on predictions and ground truth.
+        
+        Args:
+            predictions: Tensor of shape (batch_size, num_concepts) with predicted probabilities
+            ground_truth: Tensor of shape (batch_size, num_concepts) with binary ground truth
+        """
+        predictions = predictions.detach().cpu().numpy()
+        ground_truth = ground_truth.detach().cpu().numpy()
+        
+        # Convert predictions to binary (0/1) using 0.5 threshold
+        predictions = (predictions >= 0.5).astype(bool)
+        ground_truth = (ground_truth >= 0.5).astype(bool)
+        
+        for i, concept in enumerate(self.concept_names):
+            pred = predictions[:, i]
+            truth = ground_truth[:, i]
+            
+            self.concept_stats[concept]['true_positives'] += np.sum(np.logical_and(pred == 1, truth == 1))
+            self.concept_stats[concept]['true_negatives'] += np.sum(np.logical_and(pred == 0, truth == 0))
+            self.concept_stats[concept]['false_positives'] += np.sum(np.logical_and(pred == 1, truth == 0))
+            self.concept_stats[concept]['false_negatives'] += np.sum(np.logical_and(pred == 0, truth == 1))
+            self.concept_stats[concept]['total_samples'] += len(truth)
+
+    def get_concept_metrics(self, concept: str) -> Dict[str, float]:
+        """Calculate metrics for a specific concept"""
+        stats = self.concept_stats[concept]
+        tp = stats['true_positives']
+        tn = stats['true_negatives']
+        fp = stats['false_positives']
+        fn = stats['false_negatives']
+        total = stats['total_samples']
+        
+        # Calculate all metrics
+        accuracy = (tp + tn) / total if total > 0 else 0
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+        positive_ratio = (tp + fn) / total if total > 0 else 0
+        
+        return {
+            'accuracy': accuracy,
+            'precision': precision,
+            'recall': recall,
+            'f1': f1,
+            'positive_ratio': positive_ratio
+        }
+
+    def get_all_metrics(self) -> Dict[str, Dict[str, float]]:
+        """Get metrics for all concepts"""
+        return {
+            concept: self.get_concept_metrics(concept)
+            for concept in self.concept_names
+        }
+
+    def save_metrics(self):
+        """Save metrics to file in a human-readable format"""
+        metrics = self.get_all_metrics()
+        
+        # Save to JSON file
+        with open(self.log_file, 'w') as f:
+            json.dump({
+                "concepts": metrics
+            }, f, indent=2)
+        
+        # Print formatted metrics
+        #print("\nConcept Metrics:")
+        #print(self.format_metrics(metrics))
+
+    def format_metrics(self, metrics: Dict[str, Dict[str, float]]) -> str:
+        """Format metrics for human-readable console output"""
+        formatted = ""
+        for concept, concept_metrics in metrics.items():
+            formatted += f"Concept: {concept}\n"
+            for metric, value in concept_metrics.items():
+                formatted += f"  {metric.capitalize()}: {value:.4f}"
+                if metric == 'positive_ratio':
+                    formatted += f" ({value*100:.1f}% positive samples)"
+                formatted += "\n"
+            formatted += "\n"
+        return formatted
+
 '''
 class Logger(object):
     """

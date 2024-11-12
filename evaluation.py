@@ -9,15 +9,13 @@ import os
 from omegaconf import DictConfig,OmegaConf
 from data_loaders import CUB_extnded_dataset
 from models import get_inception_transform
-from utils.analysis import TrainingLogger
+from utils.analysis import TrainingLogger,ConceptLogger
 from sailency import get_saliency_maps,saliency_score_image,get_visible_consepts
 import tqdm
 
 
 def main(cfg: DictConfig):
 
-    #Make the analysis object
-    logger = TrainingLogger(os.path.join(cfg.output_dir, 'Evaluation.json'))
 
     if cfg.device.lower() == "auto":
         device= "cuda" if torch.cuda.is_available() else "cpu"
@@ -44,6 +42,7 @@ def main(cfg: DictConfig):
         # Load c to y model
         CtoY_model = torch.load(cfg.CtoY_path, map_location=torch.device(device))
         CtoY_model.eval()
+
     
     elif cfg.mode == "Standard":
 
@@ -59,9 +58,18 @@ def main(cfg: DictConfig):
     transform = get_inception_transform(mode=cfg.split, methode= cfg.transform_method)
     data_set = CUB_extnded_dataset(mode=cfg.split,config_dict=cfg.CUB_dataloader,transform=transform)
 
+    concepts_name = data_set.consept_labels_names
+
     #Make a mask if a model need to be tested on another dataset than it was trained on
     if cfg.CUB_mask.use:
         mask = CUB_extnded_dataset(mode=cfg.split,config_dict=cfg.CUB_mask,transform=transform).concept_mask
+
+        concepts_name = concepts_name[mask]
+
+    #Make the analysis object
+    eval_logger = TrainingLogger(os.path.join(cfg.output_dir, 'Evaluation.json'))
+    
+    concept_logger = ConceptLogger(concept_names = concepts_name, log_file = os.path.join(cfg.output_dir,'concept_metrics.json'))
 
     # Calculate accuracy
     for i in tqdm.tqdm(range(len(data_set))):
@@ -97,10 +105,11 @@ def main(cfg: DictConfig):
 
 
             #Update concept accuracy
-            logger.update_concept_accuracy(mode="test", predictions=C_hat, ground_truth=C)
+            eval_logger.update_concept_accuracy(mode="test", predictions=C_hat, ground_truth=C)
+            concept_logger.update(predictions=C_hat, ground_truth=C)
 
         #Update the class logger
-        logger.update_class_accuracy(mode="test",logits=Y_hat, correct_label=Y)
+        eval_logger.update_class_accuracy(mode="test",logits=Y_hat, correct_label=Y)
 
     #Calulate sailency score
     if cfg.sailency == True and cfg.mode != "Standard":
@@ -128,81 +137,11 @@ def main(cfg: DictConfig):
 
             sailency_score = saliency_score_image(sailency_maps,coordinates=coordinates)
 
-            logger.update_sailency_score(mode="test",score=sailency_score)
+            eval_logger.update_sailency_score(mode="test",score=sailency_score)
 
-    logger.log_metrics(i)
-        
+    eval_logger.log_metrics(i)
+    concept_logger.save_metrics()
 
-        
-
-
-
-def XtoC_test(model,device,cfg: DictConfig):
-    """
-    Test a model on the X to C data and make sailency maps for all concepts.
-    
-    args:
-    model 
-    """
-
-
-    #Make the dataset
-    transform = get_inception_transform(mode=cfg.split, methode= cfg.transform_method)
-    data_set = CUB_extnded_dataset(mode=cfg.split,config_dict=cfg.CUB_dataloader,transform=transform)
-
-    #Make a mask if a model need to be tested on another dataset than it was trained on
-    if cfg.CUB_mask.use:
-        mask = CUB_extnded_dataset(mode=cfg.split,config_dict=cfg.CUB_mask,transform=transform).concept_mask
-
-    
-
-
-    #Make the analysis object
-    logger = TrainingLogger(os.path.join(cfg.output_dir, 'XtoC_test.json'))
-
-    for i in tqdm.tqdm(range(len(data_set))):
-        
-
-        X, C, Y , coordinates = data_set[i]
-
-        if cfg.CUB_mask.use:
-            #Apply the mask
-            C = C[mask]
-            coordinates = [coordinates[i] for i in mask]
-
-
-        #Unsqueese the data and move it to the device
-        X = X.unsqueeze(0).to(device)
-        C = C.unsqueeze(0).to(device)
-        Y = Y.unsqueeze(0).to(device)
-
-        #Forward pass
-        C_hat = model(X)
-
-        if cfg.CUB_mask.use:
-            #Only evaluated masked concepts
-            C_hat = C_hat[..., mask]
-
-    
-        #Update the logger
-        #logger.update_class_accuracy(mode="test",logits=Y_hat, correct_label=Y)
-        logger.update_concept_accuracy(mode="test", predictions=C_hat, ground_truth=C)
-
-        concept_list,coordinates = get_visible_consepts(coordinates)
-
-        sailency_maps = get_saliency_maps(X,concept_list,model,method_type="vanilla")
-
-        sailency_score = saliency_score_image(sailency_maps,coordinates=coordinates)
-
-        logger.update_sailency_score(mode="test",score=sailency_score)
-
-    logger.log_metrics(i)
-
-def CtoY_test(model,cfg: DictConfig):
-    pass
-
-def XtoY_test(model,cfg):
-    pass
         
 if __name__ == '__main__':
     cofig_dict = OmegaConf.load('config/evaluation.yaml')

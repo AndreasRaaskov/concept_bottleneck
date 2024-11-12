@@ -43,7 +43,7 @@ def train_X_to_C(args):
     #logger = Logger(os.path.join(args.log_dir, 'log.txt'))
     #logger.write(str(args) + '\n')
 
-    trakker = TrainingLogger(os.path.join(args.log_dir, 'XtoCtrain_log.json'))
+    trakker = TrainingLogger(os.path.join(args.log_dir, 'XtoC_log.json'))
 
 
     #define the data loaders
@@ -68,7 +68,7 @@ def train_X_to_C(args):
     #Write the number of concepts to the logger
     logging.info(f"Number of concepts: {n_concepts}\n")
 
-    model = ModelXtoC(pretrained=args.pretrained, freeze=args.freeze,n_concepts=n_concepts,use_aux=args.use_aux,use_sigmoid=False)
+    model = ModelXtoC(pretrained=args.pretrained, freeze=args.freeze,n_concepts=n_concepts,use_aux=args.use_aux)
 
     model = model.to(device)
 
@@ -142,7 +142,7 @@ def train_X_to_C(args):
 
 
                         #Calculate accuracy
-                        trakker.update_concept_accuracy("val",Chat, C)
+                        trakker.update_concept_accuracy("val",torch.sigmoid(Chat), C)
                         trakker.update_loss("val",loss)
 
 
@@ -268,7 +268,7 @@ def train_C_to_Y(args,XtoC_model=None):
             optimizer.step()
 
             #Calculate accuracy
-            trakker.update_class_accuracy("train",Yhat, Y)
+            trakker.update_class_accuracy("train",torch.softmax(Yhat,axis=1), Y)
             trakker.update_loss("train",loss)
         
 
@@ -289,7 +289,7 @@ def train_C_to_Y(args,XtoC_model=None):
                     loss = y_criterion(Yhat, Y)
 
                     #Calculate accuracy
-                    trakker.update_class_accuracy("val",Yhat, Y)
+                    trakker.update_class_accuracy("val",torch.softmax(Yhat,axis=1), Y)
                     trakker.update_loss("val",loss)
                 
                 #Check if the model is the best model
@@ -339,7 +339,8 @@ def train_X_to_C_to_y(args):
     """
 
     #Define the loggers
-    trakker = TrainingLogger(os.path.join(args.log_dir, 'train_log.json'))
+    XtoC_trakker = TrainingLogger(os.path.join(args.log_dir, 'XtoC_log.json'))
+    CtoY_trakker = TrainingLogger(os.path.join(args.log_dir, 'CtoY_log.json'))
 
     device = torch.device(args.device)
 
@@ -364,7 +365,7 @@ def train_X_to_C_to_y(args):
     n_classes = train_data.n_classes
 
     model = ModelXtoCtoY(pretrained=args.pretrained, freeze=args.freeze,
-                         n_classes=n_classes, use_aux=args.use_aux, n_concepts=n_concepts,use_sigmoid=False)
+                         n_classes=n_classes, use_aux=args.use_aux, n_concepts=n_concepts)
     model = model.to(device)
 
     #Define the loss function
@@ -384,12 +385,14 @@ def train_X_to_C_to_y(args):
     optimizer, scheduler = get_optimizer(model, args)
 
 
-    best_val_loss = float('inf')
+    best_val_acc = 0
 
     #Train the model
     for epoch in range(args.epochs):
 
-        trakker.reset()
+        XtoC_trakker.reset()
+        CtoY_trakker.reset()
+
         model.train()
 
         for _, data in enumerate(train_loader):
@@ -412,11 +415,12 @@ def train_X_to_C_to_y(args):
                 concept_aux_loss = c_criterion(aux_Chat,C) 
 
                 #Calculate the main loss as y loss * lambda *sum (concept losses))
-                main_loss = class_loss + concept_loss* args.attr_loss_weight
-                aux_loss = class_aux_loss + concept_aux_loss* args.attr_loss_weight
+                main_loss = class_loss + concept_loss* args.lambda1
+                aux_loss = class_aux_loss + concept_aux_loss* args.lambda1
 
                 loss = main_loss + 0.4 * aux_loss
-                trakker.update_loss("train",main_loss) #log main loss
+                CtoY_trakker.update_loss("train",class_loss)
+                XtoC_trakker.update_loss("train",concept_loss)
             else:
                 Chat,Yhat = model(X)
 
@@ -426,9 +430,10 @@ def train_X_to_C_to_y(args):
                 #Calculate the atribute loss by looping over each prediction, and multiply by lambda
                 concept_loss = c_criterion(Chat,C)
 
-                loss = main_loss + concept_loss* args.attr_loss_weight
+                loss = main_loss + concept_loss* args.lambda1
 
-                trakker.update_loss("train",loss)
+                CtoY_trakker.update_loss("train",class_loss)
+                XtoC_trakker.update_loss("train",concept_loss)
 
             #Backward pass
             optimizer.zero_grad()
@@ -436,8 +441,8 @@ def train_X_to_C_to_y(args):
             optimizer.step()
 
             #Calculate accuracy
-            trakker.update_class_accuracy("train",Yhat, Y)
-            trakker.update_concept_accuracy("train",torch.sigmoid(Chat), C)
+            CtoY_trakker.update_class_accuracy("train",torch.softmax(Yhat,axis=1), Y)
+            XtoC_trakker.update_concept_accuracy("train",torch.sigmoid(Chat), C)
             
         #Evaluate the model
         if not args.ckpt:
@@ -459,31 +464,34 @@ def train_X_to_C_to_y(args):
                     #Caluate c loss
                     concept_loss = c_criterion(Chat,C)
 
-                    loss = class_loss + concept_loss* args.attr_loss_weight
+                    loss = class_loss + concept_loss* args.lambda1
                     
                     #Calculate concept prediction accuracy
-                    trakker.update_concept_accuracy("val",torch.sigmoid(Chat), C)
-                    trakker.update_class_accuracy("val",Yhat, Y)
-                    trakker.update_loss("val",loss)
+                    XtoC_trakker.update_concept_accuracy("val",torch.sigmoid(Chat), C)
+                    XtoC_trakker.update_loss("val",concept_loss)
 
-            val_loss = trakker.get_loss_metrics("val")['avg_loss']
-            val_acc = trakker.get_class_metrics("val")['top1_accuracy'] #Acuracy of class prediction
+                    CtoY_trakker.update_class_accuracy("val",torch.softmax(Yhat,axis=1), Y)
+                    CtoY_trakker.update_loss("val",class_loss)
+
+            val_loss = CtoY_trakker.get_loss_metrics("val")['avg_loss']
+            val_acc = CtoY_trakker.get_class_metrics("val")['top1_accuracy'] #Acuracy of class prediction
 
 
         else:
             #If the model is a checkpointed model, only evaluate the model on the training set
-            val_loss = trakker.get_loss_metrics("train")['avg_loss']
-            val_acc = trakker.get_class_metrics("train")['top1_accuracy']
+            val_loss = CtoY_trakker.get_loss_metrics("train")['avg_loss']
+            val_acc = CtoY_trakker.get_class_metrics("train")['top1_accuracy']
             
             logging.info(f"Epoch [{epoch:2d}]: train loss: {val_loss:.4f} train acc: {val_acc:.4f}\n")
 
         #Save all the metrics to json file
-        trakker.log_metrics(epoch)
+        XtoC_trakker.log_metrics(epoch)
+        CtoY_trakker.log_metrics(epoch)
         
-        if val_loss < best_val_loss: # Note: the original code used accuracy as the metric for early stopping
+        if val_acc > best_val_acc: # Note: the original code used accuracy as the metric for early stopping
                 logging.info(f"New best model at epoch {epoch}\n")
                 best_val_epoch = epoch
-                best_val_loss = val_loss
+                best_val_acc = val_acc
                 torch.save(model, os.path.join(args.log_dir, 'best_Joint_model.pth'))
 
 
@@ -585,7 +593,7 @@ def train_X_to_y(args):
             optimizer.step()
 
             #Calculate accuracy
-            trakker.update_class_accuracy("train",Yhat, Y)
+            trakker.update_class_accuracy("train",torch.softmax(Yhat,dim=1), Y)
         
 
         #Evaluate the model
@@ -604,7 +612,7 @@ def train_X_to_y(args):
                     loss = y_criterion(Yhat, Y)
 
                     #Calculate accuracy
-                    trakker.update_class_accuracy("val",Yhat, Y)
+                    trakker.update_class_accuracy("val",torch.softmax(Yhat,dim=1), Y)
                     trakker.update_loss("val",loss)
                 
                 #Check if the model is the best model
@@ -632,9 +640,6 @@ def train_X_to_y(args):
         # Update the learning rate
         scheduler.step()
         
-        # Check if we've reached the minimum learning rate
-        if optimizer.param_groups[0]['lr'] <= args.min_lr:
-            optimizer.param_groups[0]['lr'] = args.min_lr
         
         # Log the learning rate every 10 epochs
         if epoch % 10 == 0:
