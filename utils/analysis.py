@@ -3,18 +3,17 @@
 Provides a class to track training metrics and log them to a JSON file
 """
 
-import os
-import sys
-import numpy as np
+import wandb
 import torch
-import json
-from collections import defaultdict
-from typing import Dict, Any
+import numpy as np
+from typing import Dict, Any, Optional
 from datetime import datetime
-import matplotlib.pyplot as plt
-from scipy.stats import pearsonr, spearmanr
-from sklearn.metrics import mean_squared_error, precision_recall_fscore_support, accuracy_score, precision_score, recall_score, balanced_accuracy_score, classification_report
-from collections import defaultdict as ddict
+import json
+import os
+from collections import defaultdict
+from pathlib import Path
+from omegaconf import OmegaConf
+from hydra.core.hydra_config import HydraConfig
 
 class TrainingLogger:
 
@@ -123,6 +122,9 @@ class TrainingLogger:
             if mode in self.sailency_scores:
                 mode_metrics['sailency_scores'] = self.get_sailency_scores(mode)
             metrics[mode] = mode_metrics
+        
+        #Reset for a new train run.
+        self.reset()
         return metrics
 
     def log_metrics(self, epoch: int):
@@ -275,6 +277,342 @@ class ConceptLogger:
                 formatted += "\n"
             formatted += "\n"
         return formatted
+
+class Logger:
+    def __init__(
+        self,
+        cfg,
+        concept_mask: Optional[torch.Tensor] = None,
+    ):
+        self.use_wandb = cfg.logger.use_wandb
+
+        self.start_time = datetime.now()
+        
+        # Initialize separate epoch data for each type
+        self.ctoy_epochs_data = []
+        self.xtoc_epochs_data = []
+        
+        # Load CUB dataset specific names if using CUB
+        self.concept_names = []
+        self.class_names = []
+        if cfg.dataset_name == "CUB":
+            self.load_cub_names(cfg.CUB_dataloader.CUB_dir)
+            
+            # Apply mask to names if provided
+            if concept_mask is not None:
+                self.concept_names = [
+                    name for i, name in enumerate(self.concept_names)
+                    if concept_mask[i]
+                ]
+        
+        # Initialize W&B if enabled
+        if self.use_wandb and not wandb.run:
+            # Initialize run
+            wandb.init(
+                project=cfg.experiment_name,
+                name=f"{cfg.mode}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+                tags=[cfg.dataset_name, cfg.mode],
+                config=OmegaConf.to_container(cfg, resolve=True)
+            )
+        
+        
+        self.reset()
+
+    def load_cub_names(self, cub_dir: str):
+        """Load concept and class names from CUB dataset"""
+        # Load concept names from attributes.txt
+        attr_path = Path(cub_dir) / "attributes.txt"
+        if attr_path.exists():
+            with open(attr_path, 'r') as f:
+                self.concept_names = [
+                    line.strip().split(' ', 1)[1].strip() 
+                    for line in f.readlines()
+                ]
+                
+        # Load class names from classes.txt
+        class_path = Path(cub_dir) / "classes.txt"
+        if class_path.exists():
+            with open(class_path, 'r') as f:
+                self.class_names = [
+                    line.strip().split(' ', 1)[1].strip() 
+                    for line in f.readlines()
+                ]
+
+    def reset(self):
+        """Reset all accumulated metrics"""
+        self.metrics = defaultdict(lambda: defaultdict(list))
+        self.concept_metrics = defaultdict(lambda: {
+            'true_positives': 0,
+            'true_negatives': 0,
+            'false_positives': 0,
+            'false_negatives': 0,
+            'total': 0
+        })
+        self.class_metrics = defaultdict(lambda: {
+            'correct': 0,
+            'top5_correct': 0,
+            'total': 0
+        })
+        
+        # Add per-class and per-concept tracking
+        self.per_class_metrics = defaultdict(lambda: defaultdict(lambda: {'correct': 0, 'total': 0}))
+        self.per_concept_metrics = defaultdict(lambda: defaultdict(lambda: {
+            'true_positives': 0,
+            'true_negatives': 0,
+            'false_positives': 0,
+            'false_negatives': 0
+        }))
+
+    def update_class_accuracy(self, mode: str, logits: torch.Tensor, correct_label: torch.Tensor):
+        """Update classification metrics"""
+        logits = logits.detach().cpu().numpy()
+        correct_label = correct_label.detach().cpu().numpy()
+        
+        top_predictions = np.argsort(logits, axis=1)[:, -5:]
+        correct_classes = np.argmax(correct_label, axis=1)
+        predictions = top_predictions[:, -1]
+        
+        self.class_metrics[mode]['total'] += logits.shape[0]
+        self.class_metrics[mode]['correct'] += np.sum(predictions == correct_classes)
+        self.class_metrics[mode]['top5_correct'] += np.sum([
+            correct_class in top5 
+            for correct_class, top5 in zip(correct_classes, top_predictions)
+        ])
+
+        # Update per-class metrics
+        for pred, true_class in zip(predictions, correct_classes):
+            self.per_class_metrics[mode][true_class]['total'] += 1
+            if pred == true_class:
+                self.per_class_metrics[mode][true_class]['correct'] += 1
+
+    def get_time_since_start(self):
+        """Get time elapsed since logger initialization"""
+        elapsed = datetime.now() - self.start_time
+        return str(elapsed)
+
+    def update_concept_accuracy(self, mode: str, predictions: torch.Tensor, ground_truth: torch.Tensor):
+        """Update concept prediction metrics"""
+        predictions = (predictions.detach().cpu().numpy() >= 0.5)
+        ground_truth = (ground_truth.detach().cpu().numpy() >= 0.5)
+        
+        stats = self.concept_metrics[mode]
+        stats['total'] += predictions.shape[0] * predictions.shape[1]
+        stats['true_positives'] += np.sum(np.logical_and(predictions == 1, ground_truth == 1))
+        stats['true_negatives'] += np.sum(np.logical_and(predictions == 0, ground_truth == 0))
+        stats['false_positives'] += np.sum(np.logical_and(predictions == 1, ground_truth == 0))
+        stats['false_negatives'] += np.sum(np.logical_and(predictions == 0, ground_truth == 1))
+        
+        # Update per-concept metrics
+        for concept_idx in range(predictions.shape[1]):
+            concept_pred = predictions[:, concept_idx]
+            concept_truth = ground_truth[:, concept_idx]
+            
+            stats = self.per_concept_metrics[mode][concept_idx]
+            stats['true_positives'] += np.sum(np.logical_and(concept_pred == 1, concept_truth == 1))
+            stats['true_negatives'] += np.sum(np.logical_and(concept_pred == 0, concept_truth == 0))
+            stats['false_positives'] += np.sum(np.logical_and(concept_pred == 1, concept_truth == 0))
+            stats['false_negatives'] += np.sum(np.logical_and(concept_pred == 0, concept_truth == 1))
+
+    def get_per_concept_accuracy(self, mode: str) -> Dict[str, Dict[str, float]]:
+        """Calculate metrics for each concept in validation data"""
+        concept_metrics = {}
+        
+        for concept_idx in self.per_concept_metrics[mode]:
+            stats = self.per_concept_metrics[mode][concept_idx]
+            total = (stats['true_positives'] + stats['true_negatives'] + 
+                    stats['false_positives'] + stats['false_negatives'])
+            
+            if total > 0:
+                # Calculate all metrics
+                accuracy = (stats['true_positives'] + stats['true_negatives']) / total
+                
+                precision = (stats['true_positives'] / 
+                           (stats['true_positives'] + stats['false_positives'])
+                           if (stats['true_positives'] + stats['false_positives']) > 0 
+                           else 0)
+                
+                recall = (stats['true_positives'] / 
+                         (stats['true_positives'] + stats['false_negatives'])
+                         if (stats['true_positives'] + stats['false_negatives']) > 0 
+                         else 0)
+                
+                f1 = (2 * precision * recall / (precision + recall)
+                      if (precision + recall) > 0 
+                      else 0)
+                
+                # Use concept name if available, otherwise use index
+                concept_name = (self.concept_names[concept_idx] 
+                              if concept_idx < len(self.concept_names) 
+                              else f"concept_{concept_idx}")
+                
+                concept_metrics[concept_name] = {
+                    'accuracy': accuracy,
+                    'precision': precision,
+                    'recall': recall,
+                    'f1': f1
+                }
+        
+        return concept_metrics
+
+    def update_class_accuracy(self, mode: str, logits: torch.Tensor, correct_label: torch.Tensor):
+        """Update classification metrics"""
+        logits = logits.detach().cpu().numpy()
+        correct_label = correct_label.detach().cpu().numpy()
+        
+        top_predictions = np.argsort(logits, axis=1)[:, -5:]
+        correct_classes = np.argmax(correct_label, axis=1)
+        predictions = top_predictions[:, -1]
+        
+        self.class_metrics[mode]['total'] += logits.shape[0]
+        self.class_metrics[mode]['correct'] += np.sum(predictions == correct_classes)
+        self.class_metrics[mode]['top5_correct'] += np.sum([
+            correct_class in top5 
+            for correct_class, top5 in zip(correct_classes, top_predictions)
+        ])
+        
+        # Update per-class metrics
+        for pred, true_class in zip(predictions, correct_classes):
+            if mode not in self.per_class_metrics:
+                self.per_class_metrics[mode] = defaultdict(lambda: {'correct': 0, 'total': 0})
+            self.per_class_metrics[mode][true_class]['total'] += 1
+            if pred == true_class:
+                self.per_class_metrics[mode][true_class]['correct'] += 1
+
+    def update_loss(self, mode: str, loss: float, loss_type: str = 'total'):
+        """Update loss metrics with type (e.g., 'concept', 'class', 'total')"""
+        self.metrics[mode][f"{loss_type}_loss"].append(loss.item())
+
+    def get_loss_metrics(self, mode: str, loss_type: str = 'total') -> Dict[str, float]:
+        """Get most recent loss for the specified mode and type"""
+        return np.sum(self.metrics[mode][f"{loss_type}_loss"])
+
+    def update_learning_rate(self, optimizer):
+            """Track learning rate from optimizer"""
+            self.optimizer = optimizer  # Store for later use
+            
+            # Don't log to wandb here anymore, just store the learning rates
+            self.current_lrs = [group['lr'] for group in optimizer.param_groups]
+
+
+    def log_metrics(self, epoch: int, optimizer):
+        """Log all metrics for the current epoch"""
+        timestamp = self.get_time_since_start()
+        
+        # Organize class metrics
+        class_dict = None
+        if any(self.class_metrics[mode]['total'] > 0 for mode in ['train', 'val']):
+            class_dict = {
+                "epoch": epoch,
+                "timestamp": timestamp,
+                "metrics": {
+                    mode: {
+                        "class_metrics": self.get_class_metrics(mode),
+                        "loss_metrics": {
+                            "loss": self.get_loss_metrics(mode,"class")
+                        }
+                    }
+                    for mode in ['train', 'val']
+                    if self.class_metrics[mode]['total'] > 0
+                }
+            }
+        
+        # Organize concept metrics
+        concept_dict = None
+        if any(self.concept_metrics[mode]['total'] > 0 for mode in ['train','val']):
+            concept_dict = {
+                "epoch": epoch,
+                "timestamp": timestamp,
+                "metrics": {
+                    mode: {
+                        "concept_metrics": self.get_concept_metrics(mode),
+                        "loss_metrics": {
+                            "loss": self.get_loss_metrics(mode, "concept")
+                        }
+                    }
+                    for mode in ['train', 'val']
+                    if self.concept_metrics[mode]['total'] > 0
+                }
+            }
+
+        # Prepare W&B metrics with clear hierarchy and separate losses
+        if self.use_wandb:
+            wandb_dict = {}
+            
+            wandb_dict["learning_rate"] = optimizer.param_groups[0]['lr']
+            
+            # Total loss
+            for mode in ['train', 'val']:
+                wandb_dict[f'loss/total/{mode}'] = self.get_loss_metrics(mode, "total")
+            
+            # Class metrics
+            for mode in ['train', 'val']:
+                if self.class_metrics[mode]['total'] > 0:
+                    metrics = self.get_class_metrics(mode)
+                    for name, value in metrics.items():
+                        wandb_dict[f'classes/{mode}/{name}'] = float(value)
+                    wandb_dict[f'classes/{mode}/loss'] = self.get_loss_metrics(mode, "class")
+            
+            # Concept metrics
+            for mode in ['train', 'val']:
+                if self.concept_metrics[mode]['total'] > 0:
+                    metrics = self.get_concept_metrics(mode)
+                    for name, value in metrics.items():
+                        wandb_dict[f'concepts/{mode}/{name}'] = float(value)
+                    wandb_dict[f'concepts/{mode}/loss'] = self.get_loss_metrics(mode, "concept")
+
+            # Log to W&B
+            wandb.log(wandb_dict)
+
+            # Write JSON files
+            if class_dict is not None:
+                self.ctoy_epochs_data.append(class_dict)
+                with open(os.path.join(HydraConfig.get().run.dir, "CtoY_log.json"), 'w') as f:
+                    json.dump(self.ctoy_epochs_data, f, indent=2)
+            
+            if concept_dict is not None:
+                self.xtoc_epochs_data.append(concept_dict)
+                with open(os.path.join(HydraConfig.get().run.dir, "XtoC_log.json"), 'w') as f:
+                    json.dump(self.xtoc_epochs_data, f, indent=2)
+
+            # Reset metrics for next epoch
+            self.reset()
+
+    def get_class_metrics(self, mode: str) -> Dict[str, float]:
+        """Calculate classification metrics"""
+        stats = self.class_metrics[mode]
+        if stats['total'] == 0:
+            return {'top1_accuracy': 0, 'top5_accuracy': 0}
+            
+        return {
+            'top1_accuracy': stats['correct'] / stats['total'],
+            'top5_accuracy': stats['top5_correct'] / stats['total']
+        }
+
+    def get_concept_metrics(self, mode: str) -> Dict[str, float]:
+        """Calculate concept prediction metrics"""
+        stats = self.concept_metrics[mode]
+        total = stats['true_positives'] + stats['true_negatives'] + stats['false_positives'] + stats['false_negatives']
+        
+        if total == 0:
+            return {'accuracy': 0, 'f1': 0}
+            
+        accuracy = (stats['true_positives'] + stats['true_negatives']) / total
+        
+        precision = stats['true_positives'] / (stats['true_positives'] + stats['false_positives']) if (stats['true_positives'] + stats['false_positives']) > 0 else 0
+        recall = stats['true_positives'] / (stats['true_positives'] + stats['false_negatives']) if (stats['true_positives'] + stats['false_negatives']) > 0 else 0
+        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+        
+        return {
+            'accuracy': accuracy,
+            'precision': precision,
+            'recall': recall,
+            'f1': f1
+        }
+
+    def finish(self):
+        """Cleanup logging"""
+        if self.use_wandb:
+            wandb.finish()
 
 '''
 class Logger(object):

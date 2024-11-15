@@ -3,7 +3,7 @@
 experiment_name: "bird_classification"  # Name of the experiment for logging purposes
 
 #Meta
-name: "CUB"  # Name of the dataset (currently supports "CUB" for Caltech-UCSD Birds)
+dataset_name: "CUB"  # Name of the dataset (currently supports "CUB" for Caltech-UCSD Birds)
 seed: 1 # Random seed
 mode: Joint #"Standard", "Independent", "Joint", "Sequential","end"  # List of training modes to iterate over
 device: "auto"  # Device to use for training ("auto" for automatic detection, "cuda" for GPU, "cpu" for CPU)
@@ -14,7 +14,14 @@ device: "auto"  # Device to use for training ("auto" for automatic detection, "c
 #data_dir: data/CUB_processed/filtered  # Path to the dataset directory with anotoated pickle files note that the data directory should contain the following files: 'train.pkl', 'val.pkl', 'test.pkl' not the images
 #resampling: False  # Whether to use resampling
 
-
+logger:
+  use_wandb: True  # Enable/disable W&B logging
+  project_name: ${experiment_name}  # Use experiment name as project name
+  run_name: null  # If null, will auto-generate based on mode and timestamp
+  group: ${mode}  # Group runs by training mode
+  tags: 
+    - ${dataset_name}
+    - ${mode}
 
 
 CUB_dataloader: # Paremeter for the CUB dataloader
@@ -31,16 +38,16 @@ CUB_dataloader: # Paremeter for the CUB dataloader
 
 
 #training
-batch_size: 64
-epochs: 500 #2000  # Number of training epochs
-lr: 0.045  # Initial learning rate for optimization
-optimizer: 'RMSprop' # Optimizer to use for training (e.g., "Adam", "SGD", "RMSprop")
+batch_size: 32
+epochs: 1000 #2000  # Number of training epochs
+lr: 0.001  # Initial learning rate for optimization
+optimizer: 'Adam' # Optimizer to use for training (e.g., "Adam", "SGD", "RMSprop")
 momentum: 0.9  # Momentum factor for SGD optimizer
-weight_decay: 0 #0.000004  # Weight decay (L2 penalty) for optimization
-lambda1: 0.001  # Weighting factor for concept loss in joint training
-scheduler_step: 4  # Number of steps before decaying current learning rate by half
+weight_decay: 0.0004 #0.000004  # Weight decay (L2 penalty) for optimization
+lambda1: 0.01  # Weighting factor for concept loss in joint training
+scheduler_step: 20  # Number of steps before decaying current learning rate by half
 min_lr: 0.0001  # Minimum learning rate
-lr_decay_size: 0.94  # Learning rate decay factor
+lr_decay_size: 0.94 #0.94  # Learning rate decay factor
 weighted_loss: False # 'Whether to use weighted the positive loss for concept prediction
 #normalize_loss: False # Whether to normalize loss by taking attr_loss_weight into account
 transform_method: "resize" # Transformation method for the concept bottleneck model ("original","resize","center")
