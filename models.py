@@ -271,7 +271,8 @@ def get_inception_transform(mode="train",methode="original",resol=299):
                 ])
         else:
             transform = transforms.Compose([
-                transforms.Resize((resol, resol)),
+                #transforms.Resize((resol, resol)),
+                transforms.CenterCrop(resol),
                 transforms.ToTensor(), #implicitly divides by 255
                 transforms.Normalize(mean = [0.5, 0.5, 0.5], std = [2, 2, 2])
                 ])

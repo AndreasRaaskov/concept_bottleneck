@@ -35,8 +35,13 @@ def get_device(cfg):
 def main(args: DictConfig):
 
     # Set the seed
+    np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
+    
+    # Ensure deterministic behavior
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
     args.log_dir = Path(HydraConfig.get().run.dir) # put the log files in the same directory as the output
 

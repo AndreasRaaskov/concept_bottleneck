@@ -14,7 +14,7 @@ from collections import defaultdict
 from pathlib import Path
 from omegaconf import OmegaConf
 from hydra.core.hydra_config import HydraConfig
-
+from collections import defaultdict as ddict
 class TrainingLogger:
 
     
@@ -285,7 +285,8 @@ class Logger:
         concept_mask: Optional[torch.Tensor] = None,
     ):
         self.use_wandb = cfg.logger.use_wandb
-
+        self.training_mode = cfg.mode.lower()  # 'sequential', 'joint', etc
+        self.current_phase = 'joint'  # Default to joint, can be 'concept' or 'class' for sequential
         self.start_time = datetime.now()
         
         # Initialize separate epoch data for each type
@@ -298,7 +299,6 @@ class Logger:
         if cfg.dataset_name == "CUB":
             self.load_cub_names(cfg.CUB_dataloader.CUB_dir)
             
-            # Apply mask to names if provided
             if concept_mask is not None:
                 self.concept_names = [
                     name for i, name in enumerate(self.concept_names)
@@ -307,16 +307,27 @@ class Logger:
         
         # Initialize W&B if enabled
         if self.use_wandb and not wandb.run:
-            # Initialize run
+            run_name = (cfg.logger.run_name if cfg.logger.run_name 
+                    else f"{self.training_mode}_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+            
             wandb.init(
-                project=cfg.experiment_name,
-                name=f"{cfg.mode}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-                tags=[cfg.dataset_name, cfg.mode],
+                project=cfg.logger.project_name,
+                name=run_name,
+                group=cfg.logger.group,
+                tags=cfg.logger.tags,
                 config=OmegaConf.to_container(cfg, resolve=True)
             )
         
-        
         self.reset()
+
+    def set_phase(self, phase: str):
+        """Set current training phase for sequential mode"""
+        assert phase in ['concept', 'class'], "Phase must be either 'concept' or 'class'"
+        
+        self.current_phase = phase
+        if self.use_wandb:
+            wandb.log({"current_phase": phase})
+        self.reset()  # Reset metrics for new phase
 
     def load_cub_names(self, cub_dir: str):
         """Load concept and class names from CUB dataset"""
@@ -495,87 +506,108 @@ class Logger:
 
 
     def log_metrics(self, epoch: int, optimizer):
-        """Log all metrics for the current epoch"""
+        """Log metrics based on training mode"""
         timestamp = self.get_time_since_start()
         
-        # Organize class metrics
-        class_dict = None
-        if any(self.class_metrics[mode]['total'] > 0 for mode in ['train', 'val']):
-            class_dict = {
-                "epoch": epoch,
-                "timestamp": timestamp,
-                "metrics": {
-                    mode: {
-                        "class_metrics": self.get_class_metrics(mode),
-                        "loss_metrics": {
-                            "loss": self.get_loss_metrics(mode,"class")
-                        }
-                    }
-                    for mode in ['train', 'val']
-                    if self.class_metrics[mode]['total'] > 0
-                }
-            }
+        # Prepare wandb metrics dictionary
+        wandb_dict = {}
         
-        # Organize concept metrics
-        concept_dict = None
-        if any(self.concept_metrics[mode]['total'] > 0 for mode in ['train','val']):
-            concept_dict = {
-                "epoch": epoch,
-                "timestamp": timestamp,
-                "metrics": {
-                    mode: {
-                        "concept_metrics": self.get_concept_metrics(mode),
-                        "loss_metrics": {
-                            "loss": self.get_loss_metrics(mode, "concept")
-                        }
-                    }
-                    for mode in ['train', 'val']
-                    if self.concept_metrics[mode]['total'] > 0
-                }
-            }
-
-        # Prepare W&B metrics with clear hierarchy and separate losses
-        if self.use_wandb:
-            wandb_dict = {}
-            
+        # Add learning rate
+        if optimizer is not None:
             wandb_dict["learning_rate"] = optimizer.param_groups[0]['lr']
-            
-            # Total loss
+
+        if self.training_mode == 'Sequential':
+            # For sequential mode, log based on current phase
+            if self.current_phase == 'concept':
+                for mode in ['train', 'val']:
+                    if self.concept_metrics[mode]['total'] > 0:
+                        metrics = self.get_concept_metrics(mode)
+                        for name, value in metrics.items():
+                            wandb_dict[f'concept_phase/{mode}/{name}'] = float(value)
+                        wandb_dict[f'concept_phase/{mode}/loss'] = self.get_loss_metrics(mode, "concept")
+                        
+                # Update XtoC JSON data
+                concept_dict = {
+                    "epoch": epoch,  # Use original epoch count for concept phase
+                    "timestamp": timestamp,
+                    "metrics": {
+                        mode: {
+                            "concept_metrics": self.get_concept_metrics(mode),
+                            "loss_metrics": {
+                                "loss": self.get_loss_metrics(mode, "concept")
+                            }
+                        }
+                        for mode in ['train', 'val']
+                        if self.concept_metrics[mode]['total'] > 0
+                    }
+                }
+                self.xtoc_epochs_data.append(concept_dict)
+                
+            else:  # class phase
+                # For class phase, we restart epoch counting from 0
+                phase_epoch = epoch - len(self.xtoc_epochs_data) if epoch >= len(self.xtoc_epochs_data) else 0
+                
+                for mode in ['train', 'val']:
+                    if self.class_metrics[mode]['total'] > 0:
+                        metrics = self.get_class_metrics(mode)
+                        for name, value in metrics.items():
+                            wandb_dict[f'class_phase/{mode}/{name}'] = float(value)
+                        wandb_dict[f'class_phase/{mode}/loss'] = self.get_loss_metrics(mode, "class")
+                        
+                # Update CtoY JSON data with reset epoch count
+                class_dict = {
+                    "epoch": phase_epoch,  # Use reset epoch count for class phase
+                    "timestamp": timestamp,
+                    "metrics": {
+                        mode: {
+                            "class_metrics": self.get_class_metrics(mode),
+                            "loss_metrics": {
+                                "loss": self.get_loss_metrics(mode, "class")
+                            }
+                        }
+                        for mode in ['train', 'val']
+                        if self.class_metrics[mode]['total'] > 0
+                    }
+                }
+                self.ctoy_epochs_data.append(class_dict)
+                
+        else:  # Original joint training logic
             for mode in ['train', 'val']:
                 wandb_dict[f'loss/total/{mode}'] = self.get_loss_metrics(mode, "total")
-            
-            # Class metrics
-            for mode in ['train', 'val']:
+                
                 if self.class_metrics[mode]['total'] > 0:
                     metrics = self.get_class_metrics(mode)
                     for name, value in metrics.items():
                         wandb_dict[f'classes/{mode}/{name}'] = float(value)
                     wandb_dict[f'classes/{mode}/loss'] = self.get_loss_metrics(mode, "class")
-            
-            # Concept metrics
-            for mode in ['train', 'val']:
+                
                 if self.concept_metrics[mode]['total'] > 0:
                     metrics = self.get_concept_metrics(mode)
                     for name, value in metrics.items():
                         wandb_dict[f'concepts/{mode}/{name}'] = float(value)
                     wandb_dict[f'concepts/{mode}/loss'] = self.get_loss_metrics(mode, "concept")
 
-            # Log to W&B
+        # Log to wandb
+        if self.use_wandb:
+            # Add current epoch count to wandb
+            if self.training_mode == 'sequential':
+                if self.current_phase == 'concept':
+                    wandb_dict['concept_phase/epoch'] = epoch
+                else:
+                    wandb_dict['class_phase/epoch'] = phase_epoch
             wandb.log(wandb_dict)
 
-            # Write JSON files
-            if class_dict is not None:
-                self.ctoy_epochs_data.append(class_dict)
-                with open(os.path.join(HydraConfig.get().run.dir, "CtoY_log.json"), 'w') as f:
-                    json.dump(self.ctoy_epochs_data, f, indent=2)
-            
-            if concept_dict is not None:
-                self.xtoc_epochs_data.append(concept_dict)
-                with open(os.path.join(HydraConfig.get().run.dir, "XtoC_log.json"), 'w') as f:
-                    json.dump(self.xtoc_epochs_data, f, indent=2)
+        # Save JSON logs
+        if self.xtoc_epochs_data:
+            with open(os.path.join(HydraConfig.get().run.dir, "XtoC_log.json"), 'w') as f:
+                json.dump(self.xtoc_epochs_data, f, indent=2)
+        
+        if self.ctoy_epochs_data:
+            with open(os.path.join(HydraConfig.get().run.dir, "CtoY_log.json"), 'w') as f:
+                json.dump(self.ctoy_epochs_data, f, indent=2)
 
-            # Reset metrics for next epoch
-            self.reset()
+        # Reset metrics for next epoch
+        self.reset()
 
     def get_class_metrics(self, mode: str) -> Dict[str, float]:
         """Calculate classification metrics"""
