@@ -96,25 +96,28 @@ def extract_data(data_dir,split_file_path=None):
 
         folder_list = [f for f in listdir(data_path) if isdir(join(data_path, f))]
         folder_list.sort() #sort by class index
+        data_dict = {}
         for i, folder in enumerate(folder_list):
             folder_path = join(data_path, folder)
             classfile_list = [cf for cf in listdir(folder_path) if (isfile(join(folder_path,cf)) and cf[0] != '.')]
 
+            
             for cf in classfile_list:
                 img_id = path_to_id_map[join(folder_path+'/'+cf)] #may cause bug in linux
                 img_path = join(folder_path, cf)
-                metadata = {'id': img_id, 'img_path': img_path, 'class_label': i,
+                data_dict[img_id]={'id': img_id, 'img_path': img_path, 'class_label': i,
                         'attribute_label': attribute_labels_all[img_id], 'attribute_certainty': attribute_certainties_all[img_id],
                         'uncertain_attribute_label': attribute_uncertain_labels_all[img_id]}
                 
-                if img_id in train_data_idx:
-                    train_data.append(metadata)
-                elif img_id in val_data_idx:
-                    val_data.append(metadata)
-                elif img_id in test_data_idx:
-                    test_data.append(metadata)
-                else:
-                    print("Error: Image not found in any set")
+        for img_id in train_data_idx:
+            train_data.append(data_dict[img_id])
+        
+        for img_id in val_data_idx:
+            val_data.append(data_dict[img_id])
+        
+        for img_id in test_data_idx:
+            test_data.append(data_dict[img_id])
+
 
 
 
@@ -136,7 +139,7 @@ def get_class_attributes_data(min_class_count, out_dir, modify_data_dir='', keep
         class_label = d['class_label']
         certainties = d['attribute_certainty']
         for attr_idx, a in enumerate(d['attribute_label']):
-            if a == 0 and certainties[attr_idx] == 1: #not visible
+            if  certainties[attr_idx] == 1: #not visible
                 continue
             class_attr_count[class_label][attr_idx][a] += 1
 
@@ -194,7 +197,7 @@ if __name__ == "__main__":
     data_dir = r'data/CUB_200_2011'
     save_dir_unfiltered = r'data/CUB_processed/unfiltered'
     save_dir_filtered = r'data/CUB_processed/filtered'
-    split_file = r"data/CUB_processed/train_test_val.pkl"
+    split_file = r"data/train_test_val.pkl"
     train_data, val_data, test_data = extract_data(data_dir,split_file)
 
     #Make dir if not exist

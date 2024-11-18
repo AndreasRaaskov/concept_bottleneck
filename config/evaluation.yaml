@@ -1,26 +1,30 @@
 
-mode: Sequential #"Standard", "Independent", "Joint", "Sequential","end"  # List of training modes to iterate over
+mode: Joint #"Standard", "Independent", "Joint", "Sequential","end"  # List of training modes to iterate over
 
-model_path: "models/CUB/Sequential/2021-07-06_14-00-00"  # Path to the model directory
-output_dir: None  # Directory to save evaluation results if blank will use the model directory
+model_path: "models/Joint_Basemodel3/best_Joint_model.pth"  # Path to the model directory
+output_dir: "results"  # Directory to save evaluation results if blank will use the model directory
+
+device: "cuda"  # Device to use for training ("auto" for automatic detection, "cuda" for GPU, "cpu" for CPU)
 
 transform_method: "resize" # Transformation method for the concept bottleneck model ("original","resized","center")
 
+
+
 CUB_dataloader: # Paremeter for the CUB dataloader
   CUB_dir: data/CUB_200_2011 # Path to the CUB dataset directory
-  split_file: data/CUB_processed/train_test_val.pkl # Path to the split file
+  split_file: data/train_test_val.pkl # Path to the split file
 
   #Concept (attributes) settings
   return_concepts: False # Whether to return concept labels
   return_visibility: False # Whether to return visibility labels can not be used with majority voting if return_concepts is True the dataloader will return a tuple of (concept_labels, visibility_labels)
 
-  use_majority_voting: True # Whether to use majority voting for concepts labels
+  use_majority_voting: False # Whether to use majority voting for concepts labels
   min_class_count: 10 # apply the filer that removes concepts present in less than min_class_count classes only relevant after majority voting if false use all 320 concepts
 
 CUB_mask: # If use is true make a data loader that makes a mask for what concept to be used. 
-  use: False
+  use: True
   CUB_dir: data/CUB_200_2011 # Path to the CUB dataset directory
-  split_file: data/CUB_processed/train_test_val.pkl # Path to the split file
+  split_file: data/train_test_val.pkl # Path to the split file
 
   #Concept (attributes) settings
   return_concepts: False # Whether to return concept labels

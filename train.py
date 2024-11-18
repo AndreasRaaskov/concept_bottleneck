@@ -12,7 +12,7 @@ import logging
 #from dataset import load_data, find_class_imbalance
 from data_loaders import CUB_dataset,CUB_CtoY_dataset
 from models import   ModelXtoY, ModelXtoC, ModelXtoCtoY, ModelCtoY,get_inception_transform
-from utils.analysis import Logger,TrainingLogger
+from utils.analysis import TrainingLogger
 
 
 

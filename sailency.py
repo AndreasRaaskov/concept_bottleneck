@@ -36,8 +36,15 @@ def get_saliency_maps(img, target_classes,model, method_type='vanilla'):
     else:
         raise ValueError("Invalid method_type. Choose from 'vanilla', 'noise_tunnel', or 'gradcam'.")
 
-    saliency_maps = []
+    
+    
+    # Create a batch by repeating the input image
+    batched_input = img.repeat(len(target_classes), 1, 1, 1)
 
+    if method_type == 'vanilla':
+        # Compute vanilla saliency
+        attribution = saliency.attribute(batched_input, target=target_classes,abs=True)
+    """
     # Loop over all the target classes
     for target_class in target_classes:
         if method_type == 'vanilla':
@@ -46,19 +53,20 @@ def get_saliency_maps(img, target_classes,model, method_type='vanilla'):
         elif method_type == 'noise_tunnel':
             # Compute saliency with noise tunneling
             attribution = saliency.attribute(img, target=int(target_class), nt_type='smoothgrad', nt_samples=50, stdevs=0.2)
-        
-        """
-        TODO fingure out how to get gradcam to work with inception
-        elif method_type == 'gradcam':
-            # Compute GradCAM
-            attribution = saliency.attribute(img, target=target_class)
-            attribution = torch.mean(attribution, dim=1, keepdim=True)  # Average across channels
-        """
-        attribution = attribution.squeeze().cpu().detach().numpy().sum(axis=0)  # Convert attribution to numpy array and sum across channels
-        attribution = (attribution) / np.sum(attribution)  # Normalize to sum to 1
-        saliency_maps.append(attribution)  
-
-
+    """ 
+    """
+    TODO fingure out how to get gradcam to work with inception
+    elif method_type == 'gradcam':
+        # Compute GradCAM
+        attribution = saliency.attribute(img, target=target_class)
+        attribution = torch.mean(attribution, dim=1, keepdim=True)  # Average across channels
+    """
+    saliency_maps = []
+    for map in attribution:
+        map = map.squeeze().cpu().detach().numpy().sum(axis=0)  # Convert attribution to numpy array and sum across channels
+        if np.max(map) != 0:
+            map = map / np.sum(map)  # Normalize to sum to 1        
+            saliency_maps.append(map)  
 
 
     return saliency_maps

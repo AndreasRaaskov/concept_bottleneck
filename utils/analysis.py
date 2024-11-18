@@ -66,9 +66,9 @@ class TrainingLogger:
         """Update loss for the given mode"""
         self.loss_data[mode].append(loss.item())
     
-    def update_sailency_scores(self, mode: str, scores: torch.Tensor):
+    def update_sailency_score(self, mode: str, score: torch.Tensor):
         """Update sailency scores for the given mode"""
-        self.sailency_scores[mode].append(scores.detach().cpu().numpy())
+        self.sailency_scores[mode].append(score)
 
     def get_class_metrics(self, mode: str) -> Dict[str, float]:
         if self.class_data[mode]['total'] == 0:
@@ -106,7 +106,7 @@ class TrainingLogger:
     
     def get_sailency_scores(self, mode: str) -> Dict[str, float]:
         return {
-            'sailency_scores': self.sailency_scores[mode] / len(self.sailency_scores[mode])
+            'sailency_scores': sum(self.sailency_scores[mode]) / len(self.sailency_scores[mode])
         }
 
     def get_all_metrics(self) -> Dict[str, Dict[str, Any]]:

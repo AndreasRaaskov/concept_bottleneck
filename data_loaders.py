@@ -22,7 +22,7 @@ class CUB_dataset(Dataset):
     """
 
 
-    def __init__(self, mode, config_dict: dict,transform=None): 
+    def __init__(self, mode, config_dict: dict,transform=None, reduce = True, andreas = False): 
         """
         mode: str,
         config_dict: dict, dictionary containing all the necessary information for the dataset
@@ -31,6 +31,9 @@ class CUB_dataset(Dataset):
         self.n_classes = 200 # Number of classes in the dataset
         self.n_concepts = 312
         self.transform = transform
+        self.mode = mode
+        self.reduce = reduce
+        self.andreas = andreas
 
         self.image_dir = os.path.join(config_dict['CUB_dir'],'images') # 
 
@@ -57,19 +60,22 @@ class CUB_dataset(Dataset):
             concepts, visibility = self.load_concepts(config_dict['CUB_dir']) # Load the concepts and visibility labels
             train_labels = self.load_labels(config_dict['CUB_dir']) # Load the class labels
 
-            self.concepts, self.concept_mask = self.apply_filter(train_ids,config_dict["min_class_count"],concepts,train_labels,visibility) # Apply filter to the class attributes
+            self.concepts_MV , self.concept_mask = self.apply_filter(train_ids,config_dict["min_class_count"],concepts,train_labels,visibility,reduce) # Apply filter to the class attributes
             self.visibility = None # Visibility is not relevant after majority voting
-
-            self.n_concepts = len(self.concept_mask) # Update the number of concepts based on the filter
+            if reduce:
+                self.n_concepts = len(self.concept_mask) # Update the number of concepts based on the filter
+            
         else:
             self.majority_voting = False
+        
 
-            if config_dict['return_visibility']:
-                self.concepts, self.visibility = self.load_concepts(config_dict['CUB_dir'])
-            else:
-                self.concepts, _ = self.load_concepts(config_dict['CUB_dir'])
+        if config_dict['return_visibility']:
+            self.concepts, self.visibility = self.load_concepts(config_dict['CUB_dir'])
+        else:
+            self.concepts, _ = self.load_concepts(config_dict['CUB_dir'])
+        
+            self.visibility = None
             
-                self.visibility = None
 
         
         self.labels = self.load_labels(config_dict['CUB_dir']) # Load the class labels
@@ -116,8 +122,9 @@ class CUB_dataset(Dataset):
         """
         
         # 1 = not visible, 2 = guessing, 3 = probably, 4 = definitely
-        uncertainty_map = {1: {1: 0, 2: 0.5, 3: 0.75, 4:1}, #calibrate main label based on uncertainty label
-                    0: {1: 0, 2: 0.5, 3: 0.25, 4: 0}}
+        #uncertainty_map = {1: {1: 0, 2: 0.5, 3: 0.75, 4:1}, #calibrate main label based on uncertainty label
+                    #0: {1: 0, 2: 0.5, 3: 0.25, 4: 0}}
+
         
 
         concepts = ddict(list)
@@ -129,13 +136,13 @@ class CUB_dataset(Dataset):
 
                 concepts[int(file_id)].append(int(attribute_label)) 
 
-                visibility[int(file_id)].append(uncertainty_map[int(attribute_label)][int(attribute_certainty)])
+                visibility[int(file_id)].append(int(attribute_certainty))
         
 
         return concepts, visibility
 
 
-    def apply_filter(self,ids:list, min_class_count:int,concept:dict,labels:dict,visibility:dict):
+    def apply_filter(self,ids:list, min_class_count:int,concept:dict,labels:dict,visibility:dict, reduce=True):
         """
         Function to apply filter to the class attributes based on the majority voting to match the original code
         arguments:
@@ -155,7 +162,7 @@ class CUB_dataset(Dataset):
         for i in ids:
             for concept_idx, concept_label in enumerate(concept[i]):
                 #ignore concept if not visible
-                if concept_label==0 and visibility[i][concept_idx] == 0: 
+                if  visibility[i][concept_idx] == 1: 
                     continue
                 else:
                     class_concept_count[labels[i],concept_idx,concept_label] += 1
@@ -173,9 +180,14 @@ class CUB_dataset(Dataset):
             class_count = np.sum(class_max_label, axis=0)
             mask = np.where(class_count >= min_class_count)[0] #select attributes that are present (on a class level) in at least [min_class_count] classes
         else:
-            mask = np.arrange(312)
-        
-        return class_max_label[:,mask], mask
+            mask = np.arange(312)
+
+
+        if reduce:
+            return class_max_label[:,mask], mask
+        else:
+            class_max_label[:,mask] = 0
+            return class_max_label, mask
 
     def calculate_imbalance(self):
         """
@@ -238,7 +250,12 @@ class CUB_dataset(Dataset):
         Y = self.labels[img_id]
 
         if self.majority_voting:
-            C = self.concepts[Y] # If majority voting is applied the concepts are based on the class label
+            if self.mode == 'train':
+                C = self.concepts_MV[Y] # If majority voting is applied the concepts are based on the class label
+            else:
+                C = np.array(self.concepts[img_id])
+                if self.reduce:
+                    C = C[self.concept_mask] # remove extra concepts
         else:
             #Make C a tuple if visibility is not None
             if self.visibility is not None:
@@ -326,14 +343,14 @@ class CUB_extnded_dataset(CUB_dataset):
     A cup dataset that would return coordinates on concepts
     """
 
-    def __init__(self,mode:str, config_dict: dict,transform=None,crop_size:int =299):
+    def __init__(self,mode:str, config_dict: dict,transform=None,crop_size:int =299, reduce = True, andreas = False):
         """
         config_dict: dict, dictionary containing all the necessary information for the dataset
         transform: torchvision.transforms, transform to be applied to the image
         """
 
         self.crop_size = crop_size
-        super().__init__(mode,config_dict,transform)
+        super().__init__(mode,config_dict,transform,reduce,andreas)
 
                 #Read the file with the names of bird location attributes
         self.part_names = []
@@ -354,7 +371,7 @@ class CUB_extnded_dataset(CUB_dataset):
         self.class_labels_names = pd.read_csv(os.path.join(config_dict['CUB_dir'],"classes.txt"), sep=" ", header=None)[1].values
 
         #If a filter was applied load the filter names.
-        if self.majority_voting:
+        if self.majority_voting and reduce:
             self.consept_labels_names= self.consept_labels_names[self.concept_mask]
 
 
@@ -428,8 +445,12 @@ class CUB_extnded_dataset(CUB_dataset):
         Y = self.labels[img_id]
 
         if self.majority_voting:
-            C = self.concepts[Y] # If majority voting is applied the concepts are based on the class label
-
+            if self.mode == 'train' or self.andreas:
+                C = self.concepts_MV[Y] # If majority voting is applied the concepts are based on the class label
+            else:
+                C = np.array(self.concepts[img_id])
+                if self.reduce:
+                    C = C[self.concept_mask] # remove extra concepts
 
         else:
             #Make C a tuple if visibility is not None
@@ -457,32 +478,76 @@ class CUB_extnded_dataset(CUB_dataset):
 
 # Test the code
 if __name__ == "__main__":
-    config_dict = {'CUB_dir':r'data/CUB_200_2011','split_file':r'data\CUB_processed\train_test_val.pkl','use_majority_voting':True,'min_class_count':10,'return_visibility':True}
-    transform = transforms.Compose([transforms.Resize((299,299)),transforms.ToTensor()])
-    dataset = CUB_dataset('train',config_dict,transform)
-    print(len(dataset))
-    print(dataset[0])
-    dataset = CUB_extnded_dataset('val',config_dict,transform)
-    print(dataset.calculate_imbalance())
-    print(len(dataset))
-    print(dataset[0])
-    dataset = CUB_CtoY_dataset('train',config_dict,transform)
-    print(len(dataset))
-    print(dataset[0])
-    
+    #Make sure majority voting is working is returning the exact dataset as the original papar
 
-    config_dict = {'CUB_dir':r'data/CUB_200_2011','split_file':r'data\CUB_processed\train_test_val.pkl','use_majority_voting':False,'min_class_count':10,'return_visibility':True}
+    #Load original pickle file
+    import pickle
+
+    original = pickle.load(open(r'data\CUB_processed\Original\train.pkl','rb'))
+
+    config_dict = {'CUB_dir':r'data/CUB_200_2011','split_file':r'data\train_test_val.pkl','use_majority_voting':True,'min_class_count':10,'return_visibility':True}
     transform = transforms.Compose([transforms.Resize((299,299)),transforms.ToTensor()])
     dataset = CUB_dataset('train',config_dict,transform)
-    print(len(dataset))
-    print(dataset[0])
+    
+    #assert the length of the dataset is the same as the original
+    assert len(dataset) == len(original) 
+
+    #assert the first same amount of concepts
+    assert len(dataset.__getitem__(0)[1]) == len(original[0000]["attribute_label"]) , f"{len(dataset.__getitem__(0)[1])} != {len(original[0000]['attribute_label'])}"
+
+    # Check if the concepts are the same for the first image
+    assert [np.int64(i) for i in dataset.__getitem__(0)[1]] == original[0000]["attribute_label"], f"{dataset.__getitem__(0)} != {original[0000]['attribute_label']}"
+
+    #Check if the class label is the same
+    assert dataset.__getitem__(0)[2].argmax().item() == original[0000]["class_label"], f"{dataset.__getitem__(0)[2]} != {original[0000]['class_label']}"
+
+    #Check the validation set
+    dataset = CUB_extnded_dataset('val',config_dict,transform)
+    original = pickle.load(open(r'data\CUB_processed\Original\val.pkl','rb'))
+
+    #assert the length of the dataset is the same as the original
+    assert len(dataset) == len(original) , f"{len(dataset)} != {len(original)}"
+
+    #assert the first same amount of concepts
+    assert len(dataset.__getitem__(0)[1]) == len(original[0000]["attribute_label"]) , f"{len(dataset.__getitem__(0)[1])} != {len(original[0000]['attribute_label'])}"
+
+    # Check if the concepts are the same for the first image
+    assert [np.int64(i) for i in dataset.__getitem__(0)[1]] == original[0000]["attribute_label"], f"{dataset.__getitem__(0)} != {original[0000]['attribute_label']}"
+
+    #Check if the class label is the same
+    assert dataset.__getitem__(0)[2].argmax().item() == original[0000]["class_label"], f"{dataset.__getitem__(0)[2]} != {original[0000]['class_label']}"
+
+
+    
+    #Check if it works witout majority voting
+    config_dict = {'CUB_dir':r'data/CUB_200_2011','split_file':r'data\train_test_val.pkl','use_majority_voting':False,'min_class_count':10,'return_visibility':False}
+    transform = transforms.Compose([transforms.Resize((299,299)),transforms.ToTensor()])
+    dataset = CUB_dataset('val',config_dict,transform)
+
+    #assert the length of the dataset is the same as the original
+    assert len(dataset) == len(original)
+
+    #Check if ther is 312 concepts
+    assert len(dataset.__getitem__(0)[1]) == 312
+
+    #Check if there is 200 classes
+    assert len(dataset.__getitem__(0)[2]) == 200
+
+
     dataset = CUB_extnded_dataset('val',config_dict,transform)
     print(dataset.calculate_imbalance())
-    print(len(dataset))
-    print(dataset[0])
-    dataset = CUB_CtoY_dataset('train',config_dict,transform)
-    print(len(dataset))
-    print(dataset[0])
+
+    dataset = CUB_CtoY_dataset('val',config_dict,transform)
+
+    #assert the length of the dataset is the same as the original
+    assert len(dataset) == len(original)
+
+    #Check if ther is 312 concepts
+    assert len(dataset.__getitem__(0)[0]) == 312
+
+    #Check if there is 200 classes
+    assert len(dataset.__getitem__(0)[1]) == 200
+
 
         
             

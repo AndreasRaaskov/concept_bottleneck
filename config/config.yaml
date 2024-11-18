@@ -19,7 +19,7 @@ resampling: False  # Whether to use resampling
 
 CUB_dataloader: # Paremeter for the CUB dataloader
   CUB_dir: data/CUB_200_2011 # Path to the CUB dataset directory
-  split_file: data/CUB_processed/train_test_val.pkl # Path to the split file
+  split_file: data//train_test_val.pkl # Path to the split file
 
   #Concept (attributes) settings
   return_concepts: False # Whether to return concept labels
@@ -32,16 +32,16 @@ CUB_dataloader: # Paremeter for the CUB dataloader
 
 #training
 batch_size: 32
-epochs: 5 #2000  # Number of training epochs
+epochs: 1000 #2000  # Number of training epochs
 lr: 0.001  # Initial learning rate for optimization
-optimizer: 'SDG' # Optimizer to use for training (e.g., "Adam", "SGD", "RMSprop")
+optimizer: 'Adam' # Optimizer to use for training (e.g., "Adam", "SGD", "RMSprop")
 momentum: 0.9  # Momentum factor for SGD optimizer
 weight_decay: 5e-5  # Weight decay (L2 penalty) for optimization
 lambda1: 0.1  # Weighting factor for concept loss in joint training
 scheduler_step: 1000  # Number of steps before decaying current learning rate by half
 min_lr: 0.0001  # Minimum learning rate
 lr_decay_size: 0.1  # Learning rate decay factor
-weighted_loss: "multiple" # 'Whether to use weighted loss for single attribute or multiple ones' option is '' or 'multiple'
+weighted_loss: "" # 'Whether to use weighted loss for single attribute or multiple ones' option is '' or 'multiple'
 attr_loss_weight: 0.1 # Lambda for attribute loss in the joint training
 normalize_loss: False # Whether to normalize loss by taking attr_loss_weight into account
 transform_method: "resize" # Transformation method for the concept bottleneck model ("original","resized","center")

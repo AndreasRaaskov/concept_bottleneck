@@ -1,0 +1,34 @@
+experiment_name: bird_classification
+name: CUB
+seed: 1
+mode: Sequential
+device: auto
+resampling: false
+CUB_dataloader:
+  CUB_dir: data/CUB_200_2011
+  split_file: data//train_test_val.pkl
+  return_concepts: false
+  return_visibility: false
+  use_majority_voting: true
+  min_class_count: 10
+batch_size: 32
+epochs: 1000
+lr: 0.001
+optimizer: Adam
+momentum: 0.9
+weight_decay: 5.0e-05
+lambda1: 0.1
+scheduler_step: 1000
+min_lr: 0.0001
+lr_decay_size: 0.1
+weighted_loss: ''
+attr_loss_weight: 0.1
+normalize_loss: false
+transform_method: resize
+concept_model: inception
+pretrained: true
+ckpt: false
+freeze: false
+use_aux: true
+bottleneck: false
+log_dir: None
