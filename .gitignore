@@ -83,7 +83,7 @@ CUB_200_2011/
 data/
 
 # Model checkpoints
-#*.pth
+*.pth
 
 # Hydra outputs
 outputs/
@@ -113,3 +113,4 @@ Thumbs.db
 
 #Weigts and biases
 wandb/
+

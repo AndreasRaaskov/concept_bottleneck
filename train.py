@@ -95,7 +95,7 @@ def train_X_to_C(args):
     best_val_epoch = -1
 
     #Train the model
-    for epoch in range(args.epochs):
+    for epoch in range(args.CNN_epochs):
             
             #trakker.reset()
             model.train()
@@ -274,7 +274,7 @@ def train_C_to_Y(args,XtoC_model=None):
     best_val_loss = float('inf')
 
     #Train the model
-    for epoch in range(args.epochs):
+    for epoch in range(args.end_epochs):
 
         #trakker.reset()
         model.train()
@@ -439,7 +439,7 @@ def train_X_to_C_to_y(args):
     best_val_epoch = 0
 
     #Train the model
-    for epoch in range(args.epochs):
+    for epoch in range(args.CNN_epochs):
 
         #XtoC_trakker.reset()
         #CtoY_trakker.reset()
@@ -631,10 +631,12 @@ def train_X_to_y(args):
     #Define the logger
     logger = Logger(args)
 
+    logger.set_phase('class') #Set the phase to class to only log
+
     best_val_loss = float('inf')
 
     #Train the model
-    for epoch in range(args.epochs):
+    for epoch in range(args.CNN_epochs):
 
         #trakker.reset()
         model.train()
