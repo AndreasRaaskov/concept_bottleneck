@@ -277,11 +277,11 @@ class CUB_CtoY_dataset(CUB_dataset):
 
         #Overwrite the concepts if a model is given
         if model:
-            self.concepts = self.generate_concept(model,device, hard_concept = config_dict["hard_concept"])
+            self.concepts = self.generate_concept(model,device, generate_concept = config_dict["generate_concept"])
             self.majority_voting = False #Majority voting is not relevant for the C to Y model
 
 
-    def generate_concept(self, model, device, batch_size=64, hard_concept: bool = False):
+    def generate_concept(self, model, device, batch_size=64, generate_concept: bool = False):
         """
         Function to generate the concepts given an x to c model using batch processing
         
@@ -326,9 +326,21 @@ class CUB_CtoY_dataset(CUB_dataset):
                 # Get model outputs for the batch
                 outputs = model(batch_tensor)
                 
-                # Round if hard_concept is True
-                if hard_concept:
+                if generate_concept == "logits":
+                    pass
+
+                elif generate_concept == "sigmoid":
+                    outputs = torch.sigmoid(outputs)
+                
+                elif generate_concept == "hard":
+                    # Round if hard_concept is True
+                    outputs = torch.sigmoid(outputs)
                     outputs = (outputs >= 0.5).float()
+                
+                else:
+                    raise Exception(f"{generate_concept} is invalid generate_concepts pleace use one of:logits , sigmoid or hard")
+                
+
                 
                 # Store results
                 outputs = outputs.cpu().numpy()

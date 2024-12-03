@@ -1,6 +1,6 @@
 hydra:
   run:
-    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: ${log_dir}
   sweep:
     dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
     subdir: ${hydra.job.num}
@@ -112,11 +112,11 @@ hydra:
     hydra:
     - hydra.mode=RUN
     task:
-    - mode=Joint
+    - mode=Sequential
   job:
     name: main
     chdir: null
-    override_dirname: mode=Joint
+    override_dirname: mode=Sequential
     id: ???
     num: ???
     config_name: config
@@ -141,7 +141,7 @@ hydra:
     - path: ''
       schema: structured
       provider: schema
-    output_dir: /zhome/0a/b/138401/concept_bottleneck/outputs/2024-11-17/23-23-21
+    output_dir: /work3/s183901/Sequential_CKTP_NoPretraining
     choices:
       hydra/env: default
       hydra/callbacks: null

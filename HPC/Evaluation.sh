@@ -1,7 +1,7 @@
 #!/bin/sh
 ### General options
 ### –- specify queue --
-#BSUB -q gpuv100
+#BSUB -q gpua100
 ### -- set the job Name --
 #BSUB -J ConceptBottleneck
 ### -- ask for number of cores (default: 1) --
@@ -34,4 +34,4 @@ module load cuda/11.6
 
 source env/bin/activate
 
-python3 main.py  --config-name Koh_CUB_replication.yaml
+python3 evaluation.py

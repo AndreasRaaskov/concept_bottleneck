@@ -17,20 +17,21 @@ CUB_dataloader:
   return_visibility: false
   use_majority_voting: false
   min_class_count: 10
-  hard_concept: false
+  generate_concept: logits
 batch_size: 32
-epochs: 52
+CNN_epochs: 184
+end_epochs: 500
 lr: 0.001
 optimizer: Adam
 momentum: 0.9
 weight_decay: 4.0e-05
-lambda1: 0.01
+lambda1: 0.003205
 scheduler_step: 20
 lr_decay_size: 0.94
 weighted_loss: false
 transform_method: original
 concept_model: inception
-pretrained: true
+pretrained: false
 ckpt: true
 freeze: false
 use_aux: true

@@ -32,65 +32,65 @@ def get_device(cfg):
     return cfg.device
 
 @hydra.main(version_base=None, config_path="config", config_name="config")
-def main(args: DictConfig):
+def main(cfg: DictConfig):
 
     # Set the seed
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    torch.cuda.manual_seed_all(args.seed)
+    np.random.seed(cfg.seed)
+    torch.manual_seed(cfg.seed)
+    torch.cuda.manual_seed_all(cfg.seed)
     
     # Ensure deterministic behavior
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-    args.log_dir = Path(HydraConfig.get().run.dir) # put the log files in the same directory as the output
+    #log_dir = Path(HydraConfig.get().run.dir) # put the log files in the same directory as the output
 
     
     # Find the device
-    device = get_device(args)
+    device = get_device(cfg)
     print(f"Using device: {device}")
-    args.device = device
+    cfg.device = device
 
-    experiment = args.mode
+    experiment = cfg.mode
     
 
 
     print("Configuration for this run:")
-    print(OmegaConf.to_yaml(args))
+    print(OmegaConf.to_yaml(cfg))
     
 
     if experiment == 'Concept':
-        train_X_to_C(args)
-        save_training_metrics(os.path.join(args.log_dir, 'XtoC_log.json'),args.log_dir) #Read file from Json
+        train_X_to_C(cfg)
+        save_training_metrics(os.path.join(cfg.log_dir, 'XtoC_log.json'),cfg.log_dir) #Read file from Json
 
     elif experiment == 'Independent':
-        train_X_to_C(args)
-        train_C_to_Y(args)
-        save_training_metrics(os.path.join(args.log_dir, 'XtoC_log.json'),args.log_dir)
-        save_training_metrics(os.path.join(args.log_dir, 'CtoY_log.json'),args.log_dir)
+        train_X_to_C(cfg)
+        train_C_to_Y(cfg)
+        save_training_metrics(os.path.join(cfg.log_dir, 'XtoC_log.json'),cfg.log_dir)
+        save_training_metrics(os.path.join(cfg.log_dir, 'CtoY_log.json'),cfg.log_dir)
 
     elif experiment == 'Sequential':
-        XtoC_model=train_X_to_C(args)
+        XtoC_model=train_X_to_C(cfg)
 
         #tain the model on predictions of the previous model
-        train_C_to_Y(args,XtoC_model)
-        save_training_metrics(os.path.join(args.log_dir, 'XtoC_log.json'),args.log_dir)
-        save_training_metrics(os.path.join(args.log_dir, 'CtoY_log.json'),args.log_dir)
+        train_C_to_Y(cfg,XtoC_model)
+        save_training_metrics(os.path.join(cfg.log_dir, 'XtoC_log.json'),cfg.log_dir)
+        save_training_metrics(os.path.join(cfg.log_dir, 'CtoY_log.json'),cfg.log_dir)
         
 
     elif experiment == 'Joint':
-        train_X_to_C_to_y(args)
-        save_training_metrics(os.path.join(args.log_dir, 'XtoC_log.json'),args.log_dir)
-        save_training_metrics(os.path.join(args.log_dir, 'CtoY_log.json'),args.log_dir)
+        train_X_to_C_to_y(cfg)
+        save_training_metrics(os.path.join(cfg.log_dir, 'XtoC_log.json'),cfg.log_dir)
+        save_training_metrics(os.path.join(cfg.log_dir, 'CtoY_log.json'),cfg.log_dir)
 
     elif experiment == 'Standard':
-        train_X_to_y(args)
-        save_training_metrics(os.path.join(args.log_dir, 'train_log.json'),args.log_dir)
+        train_X_to_y(cfg)
+        save_training_metrics(os.path.join(cfg.log_dir, 'train_log.json'),cfg.log_dir)
 
     elif experiment == 'End':
         #Train only a C to Y model, may be used instrad of Independent
-        train_C_to_Y(args)
-        save_training_metrics(os.path.join(args.log_dir, 'CtoY_log.json'),args.log_dir)
+        train_C_to_Y(cfg)
+        save_training_metrics(os.path.join(cfg.log_dir, 'CtoY_log.json'),cfg.log_dir)
     
     else:
         print(f"Invalid experiment type {experiment} provided. Please provide one of the following: Concept, Independent, Sequential, Joint, Standard")

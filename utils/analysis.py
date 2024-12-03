@@ -619,7 +619,19 @@ class Logger:
                 
             }
 
+        #Log induvidual concept metrics
+        NoMajority = self.get_per_concept_accuracy("NoMajority")
+        Majority = self.get_per_concept_accuracy("Majority")
 
+        #For each concept log both modes
+        if self.training_mode != 'Standard':
+            for concept in self.concept_names:
+                concept_metrics = {}
+
+                for type in ["accuracy","precision","recall","f1"]:
+                    concept_metrics[f"NoMajority_{type}"] = NoMajority[concept][type]
+                    concept_metrics[f"Majority_{type}"] = Majority[concept][type]
+                metrics[concept] = concept_metrics
         
 
         # Log metrics to WandB
@@ -631,20 +643,7 @@ class Logger:
                 else:
                     wandb.log({mode: mode_metrics}, step=0)
         
-            #Log induvidual concept metrics
 
-            NoMajority = self.get_per_concept_accuracy("NoMajority")
-            Majority = self.get_per_concept_accuracy("Majority")
-
-            #For each concept log both modes
-            if self.training_mode != 'Standard':
-                for concept in self.concept_names:
-                    concept_metrics = {}
-
-                    for type in ["accuracy","precision","recall","f1"]:
-                        concept_metrics[f"NoMajority_{type}"] = NoMajority[concept][type]
-                        concept_metrics[f"Majority_{type}"] = Majority[concept][type]
-                    metrics[concept] = concept_metrics
 
 
 

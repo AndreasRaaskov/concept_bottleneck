@@ -141,7 +141,7 @@ hydra:
     - path: ''
       schema: structured
       provider: schema
-    output_dir: /zhome/0a/b/138401/concept_bottleneck/outputs/2024-11-17/22-47-06
+    output_dir: /zhome/0a/b/138401/concept_bottleneck/outputs/2024-11-28/22-25-46
     choices:
       hydra/env: default
       hydra/callbacks: null
