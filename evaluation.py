@@ -27,8 +27,13 @@ def main(cfg: DictConfig):
     if cfg.mode == "Joint":
         #Load the model
         joint_model = torch.load(cfg.joint_path, map_location=torch.device(device))
-        XtoC_model = joint_model.XtoC_model
-        CtoY_model = joint_model.CtoY_model
+
+        if cfg.original_model:
+            XtoC_model = joint_model.first_model
+            CtoY_model = joint_model.sec_model
+        else:
+            XtoC_model = joint_model.XtoC_model
+            CtoY_model = joint_model.CtoY_model
 
         XtoC_model.eval()
         CtoY_model.eval()
@@ -93,14 +98,24 @@ def main(cfg: DictConfig):
 
         if cfg.mode == "Standard":
             #Forward pass
-            Y_hat = torch.softmax(XtoY_model(X),dim=1)
+            if cfg.original_model: #The original model returns a list where the first element is the y_hat
+                Y_hat = torch.softmax(XtoY_model(X)[0],dim=1)
+            else:
+                Y_hat = torch.softmax(XtoY_model(X),dim=1)
         
         else: # Evaluate both C and Y
 
             #Forward pass
-            C_hat = torch.sigmoid(XtoC_model(X))
+            if cfg.original_model: #The original model returns a list where the first element is the y_hat
+                C_hat = torch.tensor(XtoC_model(X)).unsqueeze(0)
 
-            Y_hat = torch.softmax(CtoY_model(C_hat),dim=1)
+                Y_hat = torch.softmax(CtoY_model(C_hat),dim=1)
+
+            else:
+
+                C_hat = torch.sigmoid(XtoC_model(X))
+
+                Y_hat = torch.softmax(CtoY_model(C_hat),dim=1)
 
             if C_hat.shape != C_Majority.shape:
                 #Apply the mask if the concept is not filtered

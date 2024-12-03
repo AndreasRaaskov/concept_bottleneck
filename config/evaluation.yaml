@@ -2,18 +2,18 @@
 experiment_name: "bird_classification"  # Name of the experiment for logging purposes
 dataset_name: "CUB"  # Name of the dataset (currently supports "CUB" for Caltech-UCSD Birds)
 
-mode: "Sequential" #"Standard", "Independent", "Joint", "Sequential","end"  # List of training modes to iterate over
+mode: "Joint" #"Standard", "Independent", "Joint", "Sequential","end"  # List of training modes to iterate over
 
 
 
-joint_path: "models/Joint_CKPT_NoMajority_Lambda1N /best_Joint_model.pth"  # Path to the joint model
+joint_path: "models/Original_joint/best_model_1.pth"  # Path to the joint model
 
-XtoC_path: "models/Sequential_CKTP_resize/best_XtoC_model.pth"  # Path to first part of sequential and independent model
+XtoC_path: "models/Original_concepts/best_model_1.pth"  # Path to first part of sequential and independent model
 CtoY_path: "models/Sequential_CKTP_resize/best_CtoY_model.pth"  # Path to second part of sequential and independent model
 
-XtoY_path: "models/Standard_CKTP/best_XtoY_model.pth"  # Path to the model directory
+XtoY_path: "models/Original_standard/best_model_1.pth"  # Path to the model directory
 
-output_dir: "models/Sequential_CKTP_resize"  # Directory to save evaluation results if blank will use the model directory
+output_dir: "models/Original_joint/best_model_1.pth"  # Directory to save evaluation results if blank will use the model directory
 
 device: "auto"  # Device to use for training ("auto" for automatic detection, "cuda" for GPU, "cpu" for CPU)
 
@@ -21,7 +21,7 @@ transform_method: "center" # Transformation method for the concept bottleneck mo
 
 
 logger:
-  use_wandb: True  # Enable/disable W&B logging
+  use_wandb: False  # Enable/disable W&B logging
   project_name: ${experiment_name}  # Use experiment name as project name
   run_name: null  # If null, will auto-generate based on mode and timestamp
   group: "Evaluation_${mode}"  # Group runs by training mode
@@ -30,6 +30,7 @@ logger:
     - ${mode}
 
 split: test # Selcet val or test
+original_model: Ture
 
 sailency: True # Calulate sailency score.
 sailency_methode: "vanilla"  
@@ -57,6 +58,6 @@ CUB_majority_dataloader: # Load a a dataloader with majority voting if this data
   return_visibility: False # Whether to return visibility labels can not be used with majority voting if return_concepts is True the dataloader will return a tuple of (concept_labels, visibility_labels)
 
   use_majority_voting: True # Whether to use majority voting for concepts labels
-  min_class_count: 0 # apply the filer that removes concepts present in less than min_class_count classes only relevant after majority voting if false use all 320 concepts
+  min_class_count: 10 # apply the filer that removes concepts present in less than min_class_count classes only relevant after majority voting if false use all 320 concepts
 
 
