@@ -8,7 +8,7 @@ mode: "Joint" #"Standard", "Independent", "Joint", "Sequential","end"  # List of
 
 joint_path: "models/Original_joint/best_model_1.pth"  # Path to the joint model
 
-XtoC_path: "models/Original_concepts/best_model_1.pth"  # Path to first part of sequential and independent model
+XtoC_path: "models/Sequential_CKTP_resize/best_XtoC_model.pth"  # Path to first part of sequential and independent model
 CtoY_path: "models/Sequential_CKTP_resize/best_CtoY_model.pth"  # Path to second part of sequential and independent model
 
 XtoY_path: "models/Original_standard/best_model_1.pth"  # Path to the model directory
