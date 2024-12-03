@@ -1,15 +1,15 @@
 #!/bin/sh
 ### General options
 ### –- specify queue --
-#BSUB -q gpuv100
+#BSUB -q gpua100
 ### -- set the job Name --
-#BSUB -J Joint
+#BSUB -J ConceptBottleneck
 ### -- ask for number of cores (default: 1) --
 #BSUB -n 4 
 ### -- Select the resources: 1 gpu in exclusive process mode --
 #BSUB -gpu "num=1:mode=exclusive_process"
 ### -- set walltime limit: hh:mm --  maximum 24 hours for GPU-queues right now
-#BSUB -W 6:00
+#BSUB -W 5:00
 # request 5GB of system-memory
 #BSUB -R "rusage[mem=5GB]"
 ### -- set the email address --
@@ -34,4 +34,4 @@ module load cuda/11.6
 
 source env/bin/activate
 
-python3 main.py mode=Joint
+python3 evaluation.py

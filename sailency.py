@@ -93,6 +93,9 @@ def saliency_score_part(saliency_map, coordinates):
     for target_y, target_x in coordinates:
         # Calculate Manhattan distances from each point to the target coordinate
         distances.append(np.abs(y_coords - target_y) + np.abs(x_coords - target_x))
+
+        # Calculate Euclidean distances from each point to the target coordinate
+        #distances.append(np.sqrt((y_coords - target_y)**2 + (x_coords - target_x)**2))
     
     if len(distances) ==1: #If only one coordinate return the sum of the score
         M = distances[0]

@@ -1,27 +1,43 @@
 
-mode: "Joint" #"Standard", "Independent", "Joint", "Sequential","end"  # List of training modes to iterate over
+experiment_name: "bird_classification"  # Name of the experiment for logging purposes
+dataset_name: "CUB"  # Name of the dataset (currently supports "CUB" for Caltech-UCSD Birds)
+
+mode: "Sequential" #"Standard", "Independent", "Joint", "Sequential","end"  # List of training modes to iterate over
 
 
 
-joint_path: "models/Joint_Rezise/best_Joint_model.pth"  # Path to the joint model
+joint_path: "models/Joint_CKPT_NoMajority_Lambda1N /best_Joint_model.pth"  # Path to the joint model
 
-XtoC_path: "models/Sequential_Basemodel2/best_XtoC_model.pth"  # Path to first part of sequential and independent model
-CtoY_path: "/zhome/0a/b/138401/concept_bottleneck/models/MostExplaneble/CtoY_log.json"  # Path to second part of sequential and independent model
+XtoC_path: "models/Sequential_CKTP_resize/best_XtoC_model.pth"  # Path to first part of sequential and independent model
+CtoY_path: "models/Sequential_CKTP_resize/best_CtoY_model.pth"  # Path to second part of sequential and independent model
 
-XtoY_path: "models/Standard_Baselinemodel1/CtoY_log.json"  # Path to the model directory
+XtoY_path: "models/Standard_CKTP/best_XtoY_model.pth"  # Path to the model directory
 
-output_dir: "models/Joint_Rezise"  # Directory to save evaluation results if blank will use the model directory
+output_dir: "models/Sequential_CKTP_resize"  # Directory to save evaluation results if blank will use the model directory
 
 device: "auto"  # Device to use for training ("auto" for automatic detection, "cuda" for GPU, "cpu" for CPU)
 
-transform_method: "resize" # Transformation method for the concept bottleneck model ("original","resized","center")
+transform_method: "center" # Transformation method for the concept bottleneck model ("original","resized","center")
 
-split: val # Selcet val or test
+
+logger:
+  use_wandb: True  # Enable/disable W&B logging
+  project_name: ${experiment_name}  # Use experiment name as project name
+  run_name: null  # If null, will auto-generate based on mode and timestamp
+  group: "Evaluation_${mode}"  # Group runs by training mode
+  tags: 
+    - ${dataset_name}
+    - ${mode}
+
+split: test # Selcet val or test
 
 sailency: True # Calulate sailency score.
 sailency_methode: "vanilla"  
 
-CUB_dataloader: # Paremeter for the CUB dataloader
+CUB_dataloader:
+  CUB_dir: data/CUB_200_2011
+
+CUB_NonMajority_dataloader: # Paremeter for the CUB dataloader
   CUB_dir: data/CUB_200_2011 # Path to the CUB dataset directory
   split_file: data/train_test_val.pkl # Path to the split file
 
@@ -30,10 +46,9 @@ CUB_dataloader: # Paremeter for the CUB dataloader
   return_visibility: False # Whether to return visibility labels can not be used with majority voting if return_concepts is True the dataloader will return a tuple of (concept_labels, visibility_labels)
 
   use_majority_voting: False # Whether to use majority voting for concepts labels
-  min_class_count: 10 # apply the filer that removes concepts present in less than min_class_count classes only relevant after majority voting if false use all 320 concepts
+  min_class_count: 0 # apply the filer that removes concepts present in less than min_class_count classes only relevant after majority voting if false use all 320 concepts
 
-CUB_mask: # If use is true make a data loader that makes a mask for what concept to be used. 
-  use: True
+CUB_majority_dataloader: # Load a a dataloader with majority voting if this dataset has fewer classes only those classes will be used for both evaluations 
   CUB_dir: data/CUB_200_2011 # Path to the CUB dataset directory
   split_file: data/train_test_val.pkl # Path to the split file
 
@@ -42,6 +57,6 @@ CUB_mask: # If use is true make a data loader that makes a mask for what concept
   return_visibility: False # Whether to return visibility labels can not be used with majority voting if return_concepts is True the dataloader will return a tuple of (concept_labels, visibility_labels)
 
   use_majority_voting: True # Whether to use majority voting for concepts labels
-  min_class_count: 10 # apply the filer that removes concepts present in less than min_class_count classes only relevant after majority voting if false use all 320 concepts
+  min_class_count: 0 # apply the filer that removes concepts present in less than min_class_count classes only relevant after majority voting if false use all 320 concepts
 
 
