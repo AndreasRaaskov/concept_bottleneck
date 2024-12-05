@@ -13,7 +13,7 @@ CtoY_path: "models/Sequential_CKTP_resize/best_CtoY_model.pth"  # Path to second
 
 XtoY_path: "models/Original_standard/best_model_1.pth"  # Path to the model directory
 
-output_dir: "models/Original_joint/best_model_1.pth"  # Directory to save evaluation results if blank will use the model directory
+output_dir: "models/Original_joint"  # Directory to save evaluation results if blank will use the model directory
 
 device: "auto"  # Device to use for training ("auto" for automatic detection, "cuda" for GPU, "cpu" for CPU)
 

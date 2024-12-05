@@ -77,7 +77,7 @@ def main(cfg: DictConfig):
     #Make the analysis object
     eval_logger = Logger(cfg=cfg,concept_mask=mask,concept_names=concepts_name)
     
-
+    
     # Calculate accuracy
     for i in tqdm.tqdm(range(len(Non_majority_data_set))):
 
@@ -107,7 +107,7 @@ def main(cfg: DictConfig):
 
             #Forward pass
             if cfg.original_model: #The original model returns a list where the first element is the y_hat
-                C_hat = torch.tensor(XtoC_model(X)).unsqueeze(0)
+                C_hat = XtoC_model(X)
 
                 Y_hat = torch.softmax(CtoY_model(C_hat),dim=1)
 
@@ -131,7 +131,7 @@ def main(cfg: DictConfig):
 
         #Update the class logger
         eval_logger.update_class_accuracy(mode="test",logits=Y_hat, correct_label=Y)
-
+    
     #Calulate sailency score
     if cfg.sailency == True and cfg.mode != "Standard":
 

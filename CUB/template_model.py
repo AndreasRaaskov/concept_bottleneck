@@ -226,7 +226,7 @@ class Inception3(nn.Module):
         if self.training and self.aux_logits:
             return out, out_aux
         else:
-            return out
+            return torch.stack(out).squeeze(2).transpose(0, 1)
 
     def load_partial_state_dict(self, state_dict):
         """
