@@ -212,7 +212,103 @@ def train_X_to_C(args):
             
 
 
-                    
+def perceptron_C_to_Y(args,XtoC_model=None):
+    """
+    Make a simple sklearn perceptron as end classifyer.
+    """                    
+    from sklearn.linear_model import Perceptron
+    from sklearn.multiclass import OneVsRestClassifier
+
+    transform = get_inception_transform(mode="val",methode=args.transform_method)
+    
+    #define the data loaders
+    if args.ckpt:
+        #train checkpointed model
+        train_data = CUB_CtoY_dataset(mode='ckpt',config_dict=args.CUB_dataloader,transform=transform, model=XtoC_model) #If XtoC model is provided, use it to generate the concepts
+        train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
+        val_loader = None
+    else:
+        train_data = CUB_CtoY_dataset(mode='train',config_dict=args.CUB_dataloader,transform=transform, model=XtoC_model)
+        val_data = CUB_CtoY_dataset(mode='val',config_dict=args.CUB_dataloader)
+
+        train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
+        val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=False, num_workers=4)
+
+    
+    # Get the entire dataset for training the perceptron
+    X_train = []
+    Y_train = []
+
+    for _, data in enumerate(train_loader):
+        C, Y = data
+        X_train.append(C.numpy())
+        Y_train.append(Y.numpy())
+    
+    X_train = np.concatenate(X_train)
+    Y_train = np.concatenate(Y_train)
+
+    #Get the entire dataset for validation
+    X_val = []
+    Y_val = []
+
+    for _, data in enumerate(val_loader):
+        C, Y = data
+        X_val.append(C.numpy())
+        Y_val.append(Y.numpy())
+    
+    X_val = np.concatenate(X_val)
+    Y_val = np.concatenate(Y_val)
+
+    #Define the model
+    C_to_Y_model = OneVsRestClassifier(Perceptron())
+
+    #Train the model
+    C_to_Y_model.fit(X_train,Y_train)
+
+    #Initialize the WandB logger
+    if hasattr(train_data, 'concept_mask'):
+        logger = Logger(args, concept_mask=train_data.concept_mask)
+    else:
+        logger = Logger(args)
+
+    logger.set_phase('class') #Set the phase to class to only log class metrics
+
+    #Evaluate the train set
+    Y_hat_train = C_to_Y_model.predict(X_train)
+
+    logger.update_class_accuracy("train",torch.tensor(Y_hat_train), torch.tensor(Y_train))
+
+    #Evaluate the validation set
+    Y_hat_val = C_to_Y_model.predict(X_val)
+
+    logger.update_class_accuracy("val",torch.tensor(Y_hat_val), torch.tensor(Y_val))
+    logger.log_metrics(0, None) #save the results
+    logger.finish()
+
+    #Save the model as a torch model
+    weight =  []
+    biases = []
+    for model in C_to_Y_model.estimators_:
+        weight.append(model.coef_)
+        biases.append(model.intercept_)
+    
+    #Convert the list to a tensor
+    weight = torch.nn.Parameter(torch.tensor(np.array(weight)).squeeze(1))
+    biases = torch.nn.Parameter(torch.tensor(np.array(biases)).squeeze(1))
+
+    torch_model = ModelCtoY(input_dim=X_train.shape[1],num_classes=train_data.n_classes) #Define the model
+
+    torch_model.linear.weight = weight # Replace the weights with the perceptron weights
+    torch_model.linear.bias = biases # Replace the biases with the perceptron biases
+
+    torch.save(torch_model, os.path.join(args.log_dir,'best_CtoY_model.pth')) # Save the model
+
+
+
+
+
+
+
     
 
 

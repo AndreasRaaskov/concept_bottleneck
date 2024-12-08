@@ -1,14 +1,14 @@
 # Configuration file for concept bottleneck model experiments
 
 project_name: "bird_classification"  # Name of the experiment for logging purposes
-experiment_name: "Standard_NoPretraining"
+experiment_name: "End_test"
 
 
 
 #Meta
 dataset_name: "CUB"  # Name of the dataset (currently supports "CUB" for Caltech-UCSD Birds)
 seed: 1 # Random seed
-mode: Standard #"Standard", "Independent", "Joint", "Sequential","End"  # List of training modes to iterate over
+mode: End #"Standard", "Independent", "Joint", "Sequential","End"  # List of training modes to iterate over
 device: "auto"  # Device to use for training ("auto" for automatic detection, "cuda" for GPU, "cpu" for CPU)
 
 
@@ -18,7 +18,7 @@ device: "auto"  # Device to use for training ("auto" for automatic detection, "c
 #resampling: False  # Whether to use resampling
 
 logger:
-  use_wandb: True  # Enable/disable W&B logging
+  use_wandb: False  # Enable/disable W&B logging
   project_name: ${project_name}  # Use experiment name as project name
   run_name: ${experiment_name}  # If null, will auto-generate based on mode and timestamp
   group: ${mode}  # Group runs by training mode
@@ -54,21 +54,26 @@ lr_decay_size: 0.94 #0.94  # Learning rate decay factor
 weighted_loss: False # 'Whether to use weighted the positive loss for concept prediction
 #normalize_loss: False # Whether to normalize loss by taking attr_loss_weight into account
 transform_method: "original" # Transformation method for the concept bottleneck model ("original","resize","center")
+ckpt: False  #  if true combine train and val data to train the model
+freeze: false  # Whether to freeze the bottom part of the inception network
+use_aux: True # Whether to use auxiliary outputs in the inception network
 
+#Concept model
+perceptron: True # If true use a standard SKlearn perceptron model for the CtoY model if false use the same parameters as the other models
+X_to_C_path: None  # Path to the XtoC model only used when mode is "End"
 
 
 #models
 concept_model: "inception"  # Type of model for concept prediction only "inception" is supported
 pretrained: False  # Whether to use pretrained weights for the concept model
-ckpt: False  #  if true combine train and val data to train the model
-freeze: false  # Whether to freeze the bottom part of the inception network
-use_aux: True # Whether to use auxiliary outputs in the inception network
 
-log_dir: /work3/s183901/${mode}_${experiment_name}
+
+#log_dir: /work3/s183901/${mode}_${experiment_name}
+log_dir: models\End_NoMajority
 
 #output directorys
 hydra:
-  run:
+  run: 
     dir: ${log_dir} # Directory to save logs and model checkpoints
 
 

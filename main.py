@@ -13,7 +13,7 @@ import hydra
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, OmegaConf
 import numpy as np
-from train import train_X_to_C,train_X_to_C_to_y,train_X_to_y,train_C_to_Y
+from train import train_X_to_C,train_X_to_C_to_y,train_X_to_y,train_C_to_Y,perceptron_C_to_Y
 from utils.plot_trainlog import save_training_metrics
 
 """
@@ -89,8 +89,11 @@ def main(cfg: DictConfig):
 
     elif experiment == 'End':
         #Train only a C to Y model, may be used instrad of Independent
-        train_C_to_Y(cfg)
-        save_training_metrics(os.path.join(cfg.log_dir, 'CtoY_log.json'),cfg.log_dir)
+        if cfg.perceptron:
+            perceptron_C_to_Y(cfg)
+        else:
+            train_C_to_Y(cfg)
+            save_training_metrics(os.path.join(cfg.log_dir, 'CtoY_log.json'),cfg.log_dir)
     
     else:
         print(f"Invalid experiment type {experiment} provided. Please provide one of the following: Concept, Independent, Sequential, Joint, Standard")
