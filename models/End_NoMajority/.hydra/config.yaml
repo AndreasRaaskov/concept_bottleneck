@@ -31,7 +31,7 @@ scheduler_step: 20
 lr_decay_size: 0.94
 weighted_loss: false
 transform_method: original
-ckpt: false
+ckpt: true
 freeze: false
 use_aux: true
 perceptron: true

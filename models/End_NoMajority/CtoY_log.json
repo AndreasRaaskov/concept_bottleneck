@@ -1,21 +1,12 @@
 [
   {
     "epoch": 0,
-    "timestamp": "0:00:00.259047",
+    "timestamp": "0:00:00.336893",
     "metrics": {
       "train": {
         "class_metrics": {
-          "top1_accuracy": 0.872393661384487,
-          "top5_accuracy": 0.9176396997497915
-        },
-        "loss_metrics": {
-          "loss": 0.0
-        }
-      },
-      "val": {
-        "class_metrics": {
-          "top1_accuracy": 0.2854757929883139,
-          "top5_accuracy": 0.37061769616026713
+          "top1_accuracy": 0.80663997330664,
+          "top5_accuracy": 0.8685352018685352
         },
         "loss_metrics": {
           "loss": 0.0

@@ -31,11 +31,11 @@ scheduler_step: 20
 lr_decay_size: 0.94
 weighted_loss: false
 transform_method: original
-ckpt: false
+ckpt: true
 freeze: false
 use_aux: true
 perceptron: true
 X_to_C_path: None
 concept_model: inception
 pretrained: false
-log_dir: models\End_majority
+log_dir: models\End_Majority

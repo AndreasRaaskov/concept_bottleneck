@@ -251,14 +251,6 @@ def perceptron_C_to_Y(args,XtoC_model=None):
     X_val = []
     Y_val = []
 
-    for _, data in enumerate(val_loader):
-        C, Y = data
-        X_val.append(C.numpy())
-        Y_val.append(Y.numpy())
-    
-    X_val = np.concatenate(X_val)
-    Y_val = np.concatenate(Y_val)
-
     #Define the model
     C_to_Y_model = OneVsRestClassifier(Perceptron())
 
@@ -278,10 +270,19 @@ def perceptron_C_to_Y(args,XtoC_model=None):
 
     logger.update_class_accuracy("train",torch.tensor(Y_hat_train), torch.tensor(Y_train))
 
-    #Evaluate the validation set
-    Y_hat_val = C_to_Y_model.predict(X_val)
+    if not args.ckpt:
+        #Evaluate the validation set
+        for _, data in enumerate(val_loader):
+            C, Y = data
+            X_val.append(C.numpy())
+            Y_val.append(Y.numpy())
+        
+        X_val = np.concatenate(X_val)
+        Y_val = np.concatenate(Y_val)
 
-    logger.update_class_accuracy("val",torch.tensor(Y_hat_val), torch.tensor(Y_val))
+        Y_hat_val = C_to_Y_model.predict(X_val)
+
+        logger.update_class_accuracy("val",torch.tensor(Y_hat_val), torch.tensor(Y_val))
     logger.log_metrics(0, None) #save the results
     logger.finish()
 

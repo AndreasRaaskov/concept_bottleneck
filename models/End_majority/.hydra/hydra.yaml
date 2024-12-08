@@ -140,7 +140,7 @@ hydra:
     - path: ''
       schema: structured
       provider: schema
-    output_dir: C:\Users\Andre\OneDrive - Danmarks Tekniske Universitet\MasterThesis\concept_bottleneck\models\End_majority
+    output_dir: C:\Users\Andre\OneDrive - Danmarks Tekniske Universitet\MasterThesis\concept_bottleneck\models\End_Majority
     choices:
       hydra/env: default
       hydra/callbacks: null
