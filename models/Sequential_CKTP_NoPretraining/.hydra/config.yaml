@@ -1,11 +1,11 @@
 project_name: bird_classification
-experiment_name: CKTP_NoPretraining
+experiment_name: No_majority_seq_end
 dataset_name: CUB
 seed: 1
-mode: Sequential
+mode: End
 device: auto
 logger:
-  use_wandb: true
+  use_wandb: false
   project_name: ${project_name}
   run_name: ${experiment_name}
   group: ${mode}
@@ -20,7 +20,7 @@ CUB_dataloader:
   min_class_count: 10
   generate_concept: sigmoid
 batch_size: 32
-CNN_epochs: 103
+CNN_epochs: 500
 end_epochs: 109
 lr: 0.001
 optimizer: Adam
@@ -31,9 +31,11 @@ scheduler_step: 20
 lr_decay_size: 0.94
 weighted_loss: false
 transform_method: original
-concept_model: inception
-pretrained: false
 ckpt: true
 freeze: false
 use_aux: true
-log_dir: /work3/s183901/${mode}_${experiment_name}
+perceptron: true
+X_to_C_path: models/Sequential_CKTP_NoPretraining/best_XtoC_model.pth
+concept_model: inception
+pretrained: true
+log_dir: models/Sequential_CKTP_NoPretraining

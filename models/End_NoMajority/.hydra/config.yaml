@@ -1,5 +1,5 @@
 project_name: bird_classification
-experiment_name: End_test
+experiment_name: No_majority_seq_end
 dataset_name: CUB
 seed: 1
 mode: End
@@ -35,7 +35,7 @@ ckpt: true
 freeze: false
 use_aux: true
 perceptron: true
-X_to_C_path: None
+X_to_C_path: models/Sequential_CKPT_NoMajority/XtoC_log.json
 concept_model: inception
 pretrained: false
-log_dir: models\End_NoMajority
+log_dir: models/End_NoMajority

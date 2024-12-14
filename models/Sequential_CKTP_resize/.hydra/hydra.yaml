@@ -112,11 +112,11 @@ hydra:
     hydra:
     - hydra.mode=RUN
     task:
-    - mode=Sequential
+    - mode=Joint
   job:
     name: main
     chdir: null
-    override_dirname: mode=Sequential
+    override_dirname: mode=Joint
     id: ???
     num: ???
     config_name: config
@@ -141,7 +141,7 @@ hydra:
     - path: ''
       schema: structured
       provider: schema
-    output_dir: /work3/s183901/Sequential_CKTP_resize
+    output_dir: /zhome/0a/b/138401/concept_bottleneck/models/Sequential_CKTP_resize
     choices:
       hydra/env: default
       hydra/callbacks: null

@@ -327,7 +327,7 @@ class CUB_CtoY_dataset(CUB_dataset):
                 outputs = model(batch_tensor)
                 
                 if generate_concept == "logits":
-                    pass
+                    outputs = torch.tensor(outputs)
 
                 elif generate_concept == "sigmoid":
                     outputs = torch.sigmoid(outputs)

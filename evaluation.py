@@ -52,8 +52,8 @@ def main(cfg: DictConfig):
         CtoY_model = torch.load(cfg.CtoY_path, map_location=torch.device(device))
         CtoY_model.eval()
         CtoY_model.to(device)
+        CtoY_model = CtoY_model.float()
 
-        print(XtoC_model)
 
     
     elif cfg.mode == "Standard":

@@ -129,18 +129,18 @@ hydra:
   runtime:
     version: 1.3.2
     version_base: '1.3'
-    cwd: C:\Users\Andre\OneDrive - Danmarks Tekniske Universitet\MasterThesis\concept_bottleneck
+    cwd: /zhome/0a/b/138401/concept_bottleneck
     config_sources:
     - path: hydra.conf
       schema: pkg
       provider: hydra
-    - path: C:\Users\Andre\OneDrive - Danmarks Tekniske Universitet\MasterThesis\concept_bottleneck\config
+    - path: /zhome/0a/b/138401/concept_bottleneck/config
       schema: file
       provider: main
     - path: ''
       schema: structured
       provider: schema
-    output_dir: C:\Users\Andre\OneDrive - Danmarks Tekniske Universitet\MasterThesis\concept_bottleneck\models\End_NoMajority
+    output_dir: /zhome/0a/b/138401/concept_bottleneck/models/End_NoMajority
     choices:
       hydra/env: default
       hydra/callbacks: null

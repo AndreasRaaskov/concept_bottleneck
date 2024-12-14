@@ -90,10 +90,18 @@ def main(cfg: DictConfig):
     elif experiment == 'End':
         #Train only a C to Y model, may be used instrad of Independent
         if cfg.perceptron:
-            perceptron_C_to_Y(cfg)
+            if cfg.X_to_C_path:
+                XtoC_model = torch.load(cfg.X_to_C_path, map_location=torch.device(device),weights_only=False)
+                perceptron_C_to_Y(cfg,XtoC_model)
+            else:
+                perceptron_C_to_Y(cfg)
         else:
-            train_C_to_Y(cfg)
-            save_training_metrics(os.path.join(cfg.log_dir, 'CtoY_log.json'),cfg.log_dir)
+            if cfg.X_to_C_path:
+                XtoC_model = torch.load(cfg.X_to_C_path, map_location=torch.device(device),weights_only=False)
+                train_C_to_Y(cfg,XtoC_model)
+            else:
+                train_C_to_Y(cfg)
+                save_training_metrics(os.path.join(cfg.log_dir, 'CtoY_log.json'),cfg.log_dir)
     
     else:
         print(f"Invalid experiment type {experiment} provided. Please provide one of the following: Concept, Independent, Sequential, Joint, Standard")

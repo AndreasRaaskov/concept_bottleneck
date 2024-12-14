@@ -229,7 +229,7 @@ def perceptron_C_to_Y(args,XtoC_model=None):
         val_loader = None
     else:
         train_data = CUB_CtoY_dataset(mode='train',config_dict=args.CUB_dataloader,transform=transform, model=XtoC_model)
-        val_data = CUB_CtoY_dataset(mode='val',config_dict=args.CUB_dataloader)
+        val_data = CUB_CtoY_dataset(mode='val',config_dict=args.CUB_dataloader,transform=transform, model=XtoC_model)
 
         train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
         val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=False, num_workers=4)

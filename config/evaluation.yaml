@@ -2,18 +2,18 @@
 experiment_name: "bird_classification"  # Name of the experiment for logging purposes
 dataset_name: "CUB"  # Name of the dataset (currently supports "CUB" for Caltech-UCSD Birds)
 
-mode: "Joint" #"Standard", "Independent", "Joint", "Sequential","end"  # List of training modes to iterate over
+mode: "Sequential" #"Standard", "Independent", "Joint", "Sequential"  # List of training modes to iterate over
 
 
 
 joint_path: "models/Original_joint/best_model_1.pth"  # Path to the joint model
 
-XtoC_path: "models/Sequential_CKTP_resize/best_XtoC_model.pth"  # Path to first part of sequential and independent model
-CtoY_path: "models/Sequential_CKTP_resize/best_CtoY_model.pth"  # Path to second part of sequential and independent model
+XtoC_path: "models/Sequential_CKTP_NoPretraining/best_XtoC_model.pth"  # Path to first part of sequential and independent model
+CtoY_path: "models/Sequential_CKTP_NoPretraining/best_CtoY_model.pth"  # Path to second part of sequential and independent model
 
 XtoY_path: "models/Original_standard/best_model_1.pth"  # Path to the model directory
 
-output_dir: "models/Original_joint"  # Directory to save evaluation results if blank will use the model directory
+output_dir: "models/Sequential_CKTP_NoPretraining"  # Directory to save evaluation results if blank will use the model directory
 
 device: "auto"  # Device to use for training ("auto" for automatic detection, "cuda" for GPU, "cpu" for CPU)
 
@@ -21,7 +21,7 @@ transform_method: "center" # Transformation method for the concept bottleneck mo
 
 
 logger:
-  use_wandb: False  # Enable/disable W&B logging
+  use_wandb: True  # Enable/disable W&B logging
   project_name: ${experiment_name}  # Use experiment name as project name
   run_name: null  # If null, will auto-generate based on mode and timestamp
   group: "Evaluation_${mode}"  # Group runs by training mode
@@ -30,9 +30,9 @@ logger:
     - ${mode}
 
 split: test # Selcet val or test
-original_model: Ture
+original_model: False
 
-sailency: True # Calulate sailency score.
+sailency: False # Calulate sailency score.
 sailency_methode: "vanilla"  
 
 CUB_dataloader:
