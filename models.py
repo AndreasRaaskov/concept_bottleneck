@@ -25,7 +25,6 @@ class ModelXtoC(nn.Module):
             freeze (bool): If True, freezes the weights of the model except for the last layer
             use_aux (bool): If True, uses the auxilary model for the inception model
             n_concepts (int): Number of concepts to predict
-            use_sigmoid (bool): If True, uses sigmoid activation function for the output layer must be false in training since BCEWithLogitsLoss is used
         
         """
 
@@ -40,9 +39,6 @@ class ModelXtoC(nn.Module):
         self.model.fc = nn.Linear(2048, num_classes) # Change the last layer to output the number of concepts
 
         self.model.AuxLogits.fc = nn.Linear(768, num_classes) # Change the last layer in the auxilary model to output the number of concepts
-
-        self.activation = nn.Sigmoid() # Use sigmoid activation function
-
 
         if freeze:  # only finetune fc layer
             for name, param in self.model.named_parameters():
@@ -80,7 +76,7 @@ class ModelCtoY(nn.Module):
 class ModelXtoCtoY(nn.Module):
     
 
-    def __init__(self, pretrained, freeze, n_classes, use_aux, n_concepts):
+    def __init__(self, pretrained, freeze, n_classes, use_aux, n_concepts,use_sigmoid=False):
         """
         Model used for the X -> C -> Y part of the Joint model
 
@@ -90,20 +86,19 @@ class ModelXtoCtoY(nn.Module):
             n_classes (int): Number of classes to predict
             use_aux (bool): If True, uses the auxilary model for the inception model
             n_concepts (int): Number of concepts to predict
-            use_sigmoid (bool): If True, uses sigmoid activation function for the output layer must be false in training since BCEWithLogitsLoss is used
         """
 
         super(ModelXtoCtoY, self).__init__()
 
-        self.sailency_output = False
+        self.use_sigmoid = use_sigmoid
+
+        self.sailency_output = False #ToDo Remove this
 
         self.use_aux = use_aux
 
         self.XtoC_model = ModelXtoC(pretrained, freeze,use_aux, n_concepts)
 
         self.XtoC_model.fc = nn.Linear(2048, n_concepts) # Change the last layer to output the number of concepts
-
-        self.activation = nn.Sigmoid() # Use sigmoid activation function
 
         self.CtoY_model = ModelCtoY(n_concepts, n_classes) # Create the MLP model for the C -> Y
 
@@ -125,17 +120,26 @@ class ModelXtoCtoY(nn.Module):
             Chat, aux_Chat = self.XtoC_model(x)
 
 
-            #Apply activation before final layer
-            Yhat = self.CtoY_model(self.activation(Chat))
-            aux_Yhat = self.aux_CtoY_model(self.activation(aux_Chat))
+
+            #Apply sigmoid activation function before final layer
+            if self.use_sigmoid: 
+                Yhat = torch.sigmoid(self.CtoY_model(torch.sigmoid(Chat)))
+                aux_Yhat = torch.sigmoid(self.aux_CtoY_model(torch.sigmoid(aux_Chat)))
+            else:
+                Yhat = self.CtoY_model(Chat)
+                aux_Yhat = self.aux_CtoY_model(aux_Chat)
             
             return Chat, Yhat, aux_Chat, aux_Yhat
         
         else:
             Chat = self.XtoC_model(x)
 
-            #Apply activation before final layer
-            Yhat = self.CtoY_model(self.activation(Chat))
+            #Apply sigmoid activation function before final layer
+            if self.use_sigmoid: 
+                Yhat = torch.sigmoid(self.CtoY_model(torch.sigmoid(Chat)))
+            else:
+                Yhat = self.CtoY_model(Chat)
+
 
             if not self.sailency_output: #If we are not interested in the sailency map
                 return Chat, Yhat
@@ -146,6 +150,7 @@ class ModelXtoCtoY(nn.Module):
                     return Chat
                 elif self.sailency_output == 'Y':
                     return Yhat 
+                
     def set_sailency_output(self, output):
         """
         Function for returning the sailency map of the model

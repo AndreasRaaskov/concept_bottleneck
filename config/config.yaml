@@ -66,6 +66,7 @@ X_to_C_path: None  # Path to the XtoC model only used when mode is "End"
 #models
 concept_model: "inception"  # Type of model for concept prediction only "inception" is supported
 pretrained: False  # Whether to use pretrained weights for the concept model
+use_sigmoid: True  # Whether to use sigmoid activation to predict concepts: If true concepts is treated like a probability with classification treeshold 0.5: if false concepts are raw logits with classification threshold being 0
 
 
 #log_dir: /work3/s183901/${mode}_${experiment_name}
