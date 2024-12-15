@@ -122,6 +122,7 @@ def main(cfg: DictConfig):
 
             if C_hat.shape != C_Majority.shape:
                 #Apply the mask if the concept is not filtered
+                print("aplying mask")
                 C_hat = C_hat[..., mask]
 
 
