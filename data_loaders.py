@@ -190,20 +190,17 @@ class CUB_dataset(Dataset):
         positive_count = np.zeros(self.n_concepts)
         
         if self.majority_voting:
-
-            # Count positive labels for each concept across all classes
+            # Count positive labels
             for id in self.data_id:
-                Y = self.labels[id]
+                Y = self.labels[id] # Get the class label first and find the matching concepts
                 positive_count += self.concepts[Y]
 
         
         else:
-            # If majority voting is not applied, the number of samples is equal to the number of images
-            n_samples = len(self.data_id)
             # Count positive labels for each concept across all samples
-            for img_id in self.data_id:
-                for i, label in enumerate(self.concepts[img_id]):
-                    positive_count[i] += label
+            for id in self.data_id:
+                positive_count += self.concepts[id] 
+
 
         # Calculate imbalance ratio for each concept
         imbalance_ratios = n_samples/positive_count-1
