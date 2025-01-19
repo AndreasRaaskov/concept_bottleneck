@@ -1,0 +1,3 @@
+- mode=End
+- experiment_name=End_Majority_sigmoid
+- CUB_dataloader.generate_concept=sigmoid

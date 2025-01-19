@@ -16,7 +16,7 @@
         "top5_accuracy": 0.7607870210562651
     },
     "Sailency": {
-        "score": null
+        "score": 0.8886458142501664
     },
     "has_bill_shape::dagger": {
         "NoMajority_accuracy": 0.8859164653089403,

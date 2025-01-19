@@ -1,7 +1,7 @@
 #!/bin/sh
 ### General options
 ### –- specify queue --
-#BSUB -q gpua100
+#BSUB -q gpuv100
 ### -- set the job Name --
 #BSUB -J Standard
 ### -- ask for number of cores (default: 1) --
@@ -9,7 +9,7 @@
 ### -- Select the resources: 1 gpu in exclusive process mode --
 #BSUB -gpu "num=1:mode=exclusive_process"
 ### -- set walltime limit: hh:mm --  maximum 24 hours for GPU-queues right now
-#BSUB -W 12:00
+#BSUB -W 16:00
 # request 5GB of system-memory
 #BSUB -R "rusage[mem=5GB]"
 ### -- set the email address --
@@ -34,4 +34,7 @@ module load cuda/11.6
 
 source env/bin/activate
 
-python3 main.py  mode=Standard
+#python3 main.py  mode=Standard experiment_name=Standard_CKTP_baseline CNN_epochs=71 ckpt=True
+#python3 main.py  mode=Standard experiment_name=Standard_CKTP_baseline_Rezise transform_method=resize CNN_epochs=688 ckpt=True
+#python3 main.py  mode=Standard experiment_name=Standard_CKTP_baseline_noPretraining pretrained=False CNN_epochs=118 ckpt=True
+python3 main.py  mode=Standard experiment_name=Standard_SDG pretrained=True CNN_epochs=1000 ckpt=False optimizer=SGD scheduler_step=20

@@ -1,15 +1,15 @@
 #!/bin/sh
 ### General options
 ### –- specify queue --
-#BSUB -q gpua100
+#BSUB -q gpuv100
 ### -- set the job Name --
-#BSUB -J Joint
+#BSUB -J Concept
 ### -- ask for number of cores (default: 1) --
 #BSUB -n 4 
 ### -- Select the resources: 1 gpu in exclusive process mode --
 #BSUB -gpu "num=1:mode=exclusive_process"
 ### -- set walltime limit: hh:mm --  maximum 24 hours for GPU-queues right now
-#BSUB -W 6:00
+#BSUB -W 12:00
 # request 5GB of system-memory
 #BSUB -R "rusage[mem=5GB]"
 ### -- set the email address --
@@ -34,9 +34,4 @@ module load cuda/11.6
 
 source env/bin/activate
 
-#python3 main.py mode=Joint experiment_name=Joint_Rezise_WD0004 ckpt=False CNN_epochs=1000 transform_method=resize weight_decay=0.0004
-#python3 main.py mode=Joint experiment_name=Joint_Rezise_WD004 ckpt=False CNN_epochs=1000 transform_method=resize weight_decay=0.004
-#python3 main.py mode=Joint experiment_name=Joint_Weighted_MV ckpt=False CNN_epochs=1000 CUB_dataloader.use_majority_voting=True weighted_loss=True
-python3 main.py mode=Joint experiment_name=Joint_Weighted_NoMV ckpt=False CNN_epochs=1000 CUB_dataloader.use_majority_voting=False weighted_loss=True
-python3 main.py mode=Joint experiment_name=Joint_NoM_NoPrtraining pretrained=False CUB_dataloader.use_majority_voting=False
-#python3 main.py mode=Joint experiment_name=Joint_NoM_NoPrtraining_Rezise pretrained=False transform_method=resize
+python3 main.py mode=Concept experiment_name=Concepts_ckpt_NoM_NoPre_rezise ckpt=True CNN_epochs=37

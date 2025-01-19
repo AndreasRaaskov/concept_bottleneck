@@ -1,7 +1,7 @@
 # Configuration file for concept bottleneck model experiments
 
 project_name: "bird_classification"  # Name of the experiment for logging purposes
-experiment_name: "End_test"
+experiment_name: "ckpt_NoM_NoPre_rezise"
 
 
 
@@ -18,7 +18,7 @@ device: "auto"  # Device to use for training ("auto" for automatic detection, "c
 #resampling: False  # Whether to use resampling
 
 logger:
-  use_wandb: False  # Enable/disable W&B logging
+  use_wandb: True  # Enable/disable W&B logging
   project_name: ${project_name}  # Use experiment name as project name
   run_name: ${experiment_name}  # If null, will auto-generate based on mode and timestamp
   group: ${mode}  # Group runs by training mode
@@ -34,7 +34,7 @@ CUB_dataloader: # Paremeter for the CUB dataloader
   #Concept (attributes) settings
   return_visibility: False # Whether to return visibility labels can not be used with majority voting if return_concepts is True the dataloader will return a tuple of (concept_labels, visibility_labels)
 
-  use_majority_voting: True  # Whether to use majority voting for concepts labels
+  use_majority_voting: False  # Whether to use majority voting for concepts labels
   min_class_count: 10 # apply the filer that removes concepts present in less than min_class_count classes only relevant after majority voting if false use all 320 concepts
   generate_concept: "sigmoid" # Only used when making new dataset by using XtoC model make new C binary, opition: "logits" for raw output "sigmoid" for soft concepts and "hard" for hard concepts(Make concepts binary)  
 
@@ -43,7 +43,7 @@ CUB_dataloader: # Paremeter for the CUB dataloader
 #training
 batch_size: 32
 CNN_epochs: 500 #2000  # Number of training epochs for the XtoC, XtoY and XtoCtoY models 
-end_epochs: 109 #2000  # Number of training epochs for CtoY model in sequential and independent mode
+end_epochs: 500 #2000  # Number of training epochs for CtoY model in sequential and independent mode
 lr: 0.001  # Initial learning rate for optimization
 optimizer: 'Adam' # Optimizer to use for training (e.g., "Adam", "SGD", "RMSprop")
 momentum: 0.9  # Momentum factor for SGD optimizer
@@ -54,7 +54,7 @@ lr_decay_size: 0.94 #0.94  # Learning rate decay factor
 weighted_loss: False # 'Whether to use weighted the positive loss for concept prediction
 #normalize_loss: False # Whether to normalize loss by taking attr_loss_weight into account
 transform_method: "original" # Transformation method for the concept bottleneck model ("original","resize","center")
-ckpt: True  #  if true combine train and val data to train the model
+ckpt: False  #  if true combine train and val data to train the model
 freeze: false  # Whether to freeze the bottom part of the inception network
 use_aux: True # Whether to use auxiliary outputs in the inception network
 
@@ -65,12 +65,12 @@ X_to_C_path: None  # Path to the XtoC model only used when mode is "End"
 
 #models
 concept_model: "inception"  # Type of model for concept prediction only "inception" is supported
-pretrained: False  # Whether to use pretrained weights for the concept model
-use_sigmoid: True  # Whether to use sigmoid activation to predict concepts: If true concepts is treated like a probability with classification treeshold 0.5: if false concepts are raw logits with classification threshold being 0
+pretrained: True  # Whether to use pretrained weights for the concept model
+use_sigmoid: False  # Whether to use sigmoid activation to predict concepts: If true concepts is treated like a probability with classification treeshold 0.5: if false concepts are raw logits with classification threshold being 0
 
 
-#log_dir: /work3/s183901/${mode}_${experiment_name}
-log_dir: models\End_Majority
+log_dir: /work3/s183901/${mode}_${experiment_name}
+#log_dir: models\End_Majority
 
 #output directorys
 hydra:

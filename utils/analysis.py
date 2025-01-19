@@ -286,7 +286,8 @@ class Logger:
         cfg,
         concept_mask: Optional[torch.Tensor] = None,
         concept_names: Optional[list[str]] = [],
-        class_names: Optional[list[str]] = []
+        class_names: Optional[list[str]] = [],
+        confusion_matrix = False
     ):
         self.use_wandb = cfg.logger.use_wandb
         self.training_mode = cfg.mode # 'Joint', 'Independent', or 'Sequential'
@@ -300,6 +301,12 @@ class Logger:
         # Load CUB dataset specific names if using CUB
         self.concept_names = concept_names
         self.class_names = class_names
+
+        # Initialize confusion matrix if enabled
+        if confusion_matrix:
+            self.confusion_matrix_enabled = True
+        else:
+            self.confusion_matrix_enabled = False
 
 
         # Initialize W&B if enabled
@@ -373,27 +380,9 @@ class Logger:
             'false_negatives': 0
         }))
 
-    def update_class_accuracy(self, mode: str, logits: torch.Tensor, correct_label: torch.Tensor):
-        """Update classification metrics"""
-        logits = logits.detach().cpu().numpy()
-        correct_label = correct_label.detach().cpu().numpy()
-        
-        top_predictions = np.argsort(logits, axis=1)[:, -5:]
-        correct_classes = np.argmax(correct_label, axis=1)
-        predictions = top_predictions[:, -1]
-        
-        self.class_metrics[mode]['total'] += logits.shape[0]
-        self.class_metrics[mode]['correct'] += np.sum(predictions == correct_classes)
-        self.class_metrics[mode]['top5_correct'] += np.sum([
-            correct_class in top5 
-            for correct_class, top5 in zip(correct_classes, top_predictions)
-        ])
+        if self.confusion_matrix_enabled:
+            self.confusion_matrix = np.zeros((len(self.class_names), len(self.class_names)))
 
-        # Update per-class metrics
-        for pred, true_class in zip(predictions, correct_classes):
-            self.per_class_metrics[mode][true_class]['total'] += 1
-            if pred == true_class:
-                self.per_class_metrics[mode][true_class]['correct'] += 1
 
     def get_time_since_start(self):
         """Get time elapsed since logger initialization"""
@@ -485,6 +474,11 @@ class Logger:
             self.per_class_metrics[mode][true_class]['total'] += 1
             if pred == true_class:
                 self.per_class_metrics[mode][true_class]['correct'] += 1
+        
+        # Update confusion matrix
+        if self.confusion_matrix_enabled:
+            for pred, true_class in zip(predictions, correct_classes):
+                self.confusion_matrix[true_class,pred] += 1
 
     def update_loss(self, mode: str, loss: float, loss_type: str = 'total'):
         """Update loss metrics with type (e.g., 'concept', 'class', 'total')"""

@@ -12,11 +12,11 @@
         "f1": 0.8854608386450039
     },
     "Class": {
-        "top1_accuracy": 0.4118053158439765,
-        "top5_accuracy": 0.6967552640662754
+        "top1_accuracy": 0.690714532274767,
+        "top5_accuracy": 0.870037970314118
     },
     "Sailency": {
-        "score": 0.88832791238326
+        "score": null
     },
     "has_bill_shape::dagger": {
         "NoMajority_accuracy": 0.8859164653089403,

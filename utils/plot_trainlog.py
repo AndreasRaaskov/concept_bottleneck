@@ -24,8 +24,8 @@ def save_training_metrics(log_file_path,output_dir=""):
             axes = [axes]
             
         # Plot loss at the top
-        train_loss = [entry['metrics']['train']['loss_metrics']['loss'] for entry in data]
-        val_loss = [entry['metrics']['val']['loss_metrics']['loss'] for entry in data]
+        train_loss = [entry['metrics']['train']['loss_metrics'].get('loss',0) for entry in data]
+        val_loss = [entry['metrics']['val']['loss_metrics'].get('loss',0) for entry in data]
         
         axes[0].plot(epochs, train_loss, '-o', label='Train Loss')
         axes[0].plot(epochs, val_loss, '--s', label='Val Loss')
@@ -37,8 +37,8 @@ def save_training_metrics(log_file_path,output_dir=""):
             
         # Plot class metrics
         for ax, metric in zip(axes[1:], class_metrics):
-            train_values = [entry['metrics']['train']['class_metrics'][metric] for entry in data]
-            val_values = [entry['metrics']['val']['class_metrics'][metric] for entry in data]
+            train_values = [entry['metrics']['train']['class_metrics'].get(metric,0) for entry in data]
+            val_values = [entry['metrics']['val']['class_metrics'].get(metric,0) for entry in data]
             
             ax.plot(epochs, train_values, '-o', label=f'Train {metric}')
             ax.plot(epochs, val_values, '--s', label=f'Val {metric}')
@@ -63,8 +63,8 @@ def save_training_metrics(log_file_path,output_dir=""):
             axes = [axes]
             
         # Plot loss at the top
-        train_loss = [entry['metrics']['train']['loss_metrics']['loss'] for entry in data]
-        val_loss = [entry['metrics']['val']['loss_metrics']['loss'] for entry in data]
+        train_loss = [entry['metrics']['train']['loss_metrics'].get('loss',0)for entry in data]
+        val_loss = [entry['metrics']['val']['loss_metrics'].get('loss',0) for entry in data]
         
         axes[0].plot(epochs, train_loss, '-o', label='Train Loss')
         axes[0].plot(epochs, val_loss, '--s', label='Val Loss')
@@ -76,8 +76,8 @@ def save_training_metrics(log_file_path,output_dir=""):
         
         # Plot concept metrics
         for ax, metric in zip(axes[1:], concept_metrics):
-            train_values = [entry['metrics']['train']['concept_metrics'][metric] for entry in data]
-            val_values = [entry['metrics']['val']['concept_metrics'][metric] for entry in data]
+            train_values = [entry['metrics']['train']['concept_metrics'].get(metric,0) for entry in data]
+            val_values = [entry['metrics']['val']['concept_metrics'].get(metric,0) for entry in data]
             
             ax.plot(epochs, train_values, '-o', label=f'Train {metric}')
             ax.plot(epochs, val_values, '--s', label=f'Val {metric}')

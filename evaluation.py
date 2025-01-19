@@ -6,13 +6,14 @@ Script that takes a model and a dataset and evaluates the model on the dataset.
 import torch
 import hydra
 import os
+import pandas as pd
 from omegaconf import DictConfig,OmegaConf
 from data_loaders import CUB_extnded_dataset,CUB_CtoY_dataset
 from models import get_inception_transform
 from utils.analysis import Logger
 from sailency import get_saliency_maps,saliency_score_image,get_visible_consepts
 import tqdm
-
+from utils.ploting import plot_confusion_matrix
 
 def main(cfg: DictConfig):
 
@@ -71,6 +72,7 @@ def main(cfg: DictConfig):
     Non_majority_data_set = CUB_extnded_dataset(mode=cfg.split,config_dict=cfg.CUB_NonMajority_dataloader,transform=transform)
 
     concepts_name = Non_majority_data_set.consept_labels_names
+    class_name = Non_majority_data_set.class_labels_names
 
     #Make the majority dataset and find the mask, we use CtoY dataset so we only need to loade the image ones 
     Majority_dataset = CUB_CtoY_dataset(mode=cfg.split,config_dict=cfg.CUB_majority_dataloader,transform=transform)
@@ -78,7 +80,7 @@ def main(cfg: DictConfig):
     concepts_name = concepts_name[mask]
 
     #Make the analysis object
-    eval_logger = Logger(cfg=cfg,concept_mask=mask,concept_names=concepts_name)
+    eval_logger = Logger(cfg=cfg,concept_mask=mask,concept_names=concepts_name,class_names=class_name,confusion_matrix=True)
     
     
     # Calculate accuracy
@@ -134,6 +136,16 @@ def main(cfg: DictConfig):
 
         #Update the class logger
         eval_logger.update_class_accuracy(mode="test",logits=Y_hat, correct_label=Y)
+
+    #Get confusion matrix and plot it
+    confusion_matrix = eval_logger.confusion_matrix
+
+    #Save a plot of the confusion matrix
+    plot_confusion_matrix(confusion_matrix,classes=class_name,output_dir=cfg.output_dir)
+
+    #Save the confusion matrix as a csv
+    confusion_matrix_df = pd.DataFrame(confusion_matrix,columns=class_name,index=class_name)
+    confusion_matrix_df.to_csv(os.path.join(cfg.output_dir,"confusion_matrix.csv"))
     
     #Calulate sailency score
     if cfg.sailency == True and cfg.mode != "Standard":

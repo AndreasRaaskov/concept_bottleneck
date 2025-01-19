@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from pathlib import Path
+import os
 
 def plot_results(results, cfg, mode, plots_dir):
     """
@@ -56,3 +57,28 @@ def plot_results(results, cfg, mode, plots_dir):
     plt.close()
 
     print(f"Plot saved in {plots_dir}")
+
+def plot_confusion_matrix(cm, classes, output_dir):
+    """
+    Plot and save the confusion matrix.
+
+    Args:
+        cm (np.array): Confusion matrix.
+        classes (list): List of class names.
+        output_dir (Path): Directory to save the plot.
+    """
+    plt.figure(figsize=(30, 30))
+    plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+    plt.colorbar()
+    tick_marks = range(len(classes))
+    plt.xticks(tick_marks, classes, rotation=90, fontsize=5)
+    plt.yticks(tick_marks, classes, fontsize=5)
+
+    #plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.tight_layout() 
+    plt.savefig(os.path.join(output_dir, 'confusion_matrix.png'))
+    plt.close()
+
+    print(f"Confusion matrix saved in {output_dir}")

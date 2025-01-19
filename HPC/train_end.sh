@@ -9,7 +9,7 @@
 ### -- Select the resources: 1 gpu in exclusive process mode --
 #BSUB -gpu "num=1:mode=exclusive_process"
 ### -- set walltime limit: hh:mm --  maximum 24 hours for GPU-queues right now
-#BSUB -W 4:00
+#BSUB -W 6:00
 # request 5GB of system-memory
 #BSUB -R "rusage[mem=5GB]"
 ### -- set the email address --
@@ -34,4 +34,6 @@ module load cuda/11.6
 
 source env/bin/activate
 
-python3 main.py mode=End
+python3 main.py mode=End experiment_name=perceptron_NoMajority_NoW_sigmoid CUB_dataloader.generate_concept=sigmoid
+python3 main.py mode=End experiment_name=perceptron_NoMajority_NoW_logits CUB_dataloader.generate_concept=logits
+python3 main.py mode=End experiment_name=perceptron_NoMajority_NoW_hard CUB_dataloader.generate_concept=hard
