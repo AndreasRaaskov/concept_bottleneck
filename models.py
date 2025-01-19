@@ -182,7 +182,7 @@ class ModelXtoY(nn.Module):
 
         self.use_aux = use_aux
 
-        self.model = inception_v3(weights=Inception_V3_Weights.IMAGENET1K_V1 if pretrained else None, aux_logits=use_aux)# Load the inception model
+        self.model = inception_v3(weights=Inception_V3_Weights.IMAGENET1K_V1 if pretrained else False, aux_logits=use_aux)# Load the inception model
 
         self.model.fc = nn.Linear(2048, n_classes) # Change the last layer to output the number of classes
 

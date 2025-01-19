@@ -1,7 +1,7 @@
 # Configuration file for concept bottleneck model experiments
 
 project_name: "bird_classification"  # Name of the experiment for logging purposes
-experiment_name: "Seq test pos weights"
+experiment_name: "ckpt_NoM_NoPre_rezise"
 
 
 
@@ -34,7 +34,7 @@ CUB_dataloader: # Paremeter for the CUB dataloader
   #Concept (attributes) settings
   return_visibility: False # Whether to return visibility labels can not be used with majority voting if return_concepts is True the dataloader will return a tuple of (concept_labels, visibility_labels)
 
-  use_majority_voting: True  # Whether to use majority voting for concepts labels
+  use_majority_voting: False  # Whether to use majority voting for concepts labels
   min_class_count: 10 # apply the filer that removes concepts present in less than min_class_count classes only relevant after majority voting if false use all 320 concepts
   generate_concept: "sigmoid" # Only used when making new dataset by using XtoC model make new C binary, opition: "logits" for raw output "sigmoid" for soft concepts and "hard" for hard concepts(Make concepts binary)  
 
@@ -51,7 +51,7 @@ weight_decay: 0.00004 #0.00004  # Weight decay (L2 penalty) for optimization
 lambda1: 0.003205 # Weighting factor for concept loss in joint training
 scheduler_step: 20  # Number of steps before decaying current learning rate by half
 lr_decay_size: 0.94 #0.94  # Learning rate decay factor
-weighted_loss: True # 'Whether to use weighted the positive loss for concept prediction
+weighted_loss: False # 'Whether to use weighted the positive loss for concept prediction
 #normalize_loss: False # Whether to normalize loss by taking attr_loss_weight into account
 transform_method: "original" # Transformation method for the concept bottleneck model ("original","resize","center")
 ckpt: False  #  if true combine train and val data to train the model
@@ -60,13 +60,13 @@ use_aux: True # Whether to use auxiliary outputs in the inception network
 
 #Concept model
 perceptron: True # If true use a standard SKlearn perceptron model for the CtoY model if false use the same parameters as the other models
-X_to_C_path: models/Sequential_CKPT_NoMajority/best_XtoC_model.pth  # Path to the XtoC model only used when mode is "End"
+X_to_C_path: None  # Path to the XtoC model only used when mode is "End"
 
 
 #models
 concept_model: "inception"  # Type of model for concept prediction only "inception" is supported
 pretrained: True  # Whether to use pretrained weights for the concept model
-use_sigmoid: True  # Whether to use sigmoid activation to predict concepts: If true concepts is treated like a probability with classification treeshold 0.5: if false concepts are raw logits with classification threshold being 0
+use_sigmoid: False  # Whether to use sigmoid activation to predict concepts: If true concepts is treated like a probability with classification treeshold 0.5: if false concepts are raw logits with classification threshold being 0
 
 
 log_dir: /work3/s183901/${mode}_${experiment_name}

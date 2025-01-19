@@ -34,6 +34,6 @@ module load cuda/11.6
 
 source env/bin/activate
 
-python3 main.py mode=End experiment_name=perceptron_NoMajority_sigmoid CUB_dataloader.generate_concept=sigmoid
-python3 main.py mode=End experiment_name=perceptron_NoMajority_logits CUB_dataloader.generate_concept=logits
-python3 main.py mode=End experiment_name=perceptron_NoMajority_hard CUB_dataloader.generate_concept=hard
+python3 main.py mode=End experiment_name=perceptron_NoMajority_NoW_sigmoid CUB_dataloader.generate_concept=sigmoid
+python3 main.py mode=End experiment_name=perceptron_NoMajority_NoW_logits CUB_dataloader.generate_concept=logits
+python3 main.py mode=End experiment_name=perceptron_NoMajority_NoW_hard CUB_dataloader.generate_concept=hard

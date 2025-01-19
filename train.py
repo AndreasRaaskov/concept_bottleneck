@@ -708,13 +708,16 @@ def train_X_to_y(args):
         val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=False, num_workers=4)
 
     n_classes = train_data.n_classes
+    n_concepts = train_data.n_concepts
 
     #Write the number of classes and concepts to the logger
     logging.info(f"Number of classes: {n_classes}\n")
 
     
     #Define the model
-    model = ModelXtoY(pretrained=args.pretrained, freeze=args.freeze,n_classes=n_classes,use_aux=args.use_aux)
+    #model = ModelXtoY(pretrained=args.pretrained, freeze=args.freeze,n_classes=n_classes,use_aux=args.use_aux)
+    model =  ModelXtoCtoY(pretrained=args.pretrained, freeze=args.freeze,
+                         n_classes=n_classes, use_aux=args.use_aux, n_concepts=n_concepts)
     model = model.to(device)
 
     
@@ -746,7 +749,7 @@ def train_X_to_y(args):
 
             #Forward pass
             if args.use_aux:
-                Yhat, aux_Yhat = model(X)
+                _,Yhat, _,aux_Yhat = model(X)
 
                 #Calculate y loss
                 main_loss = y_criterion(Yhat, Y)
@@ -783,7 +786,7 @@ def train_X_to_y(args):
                     Y = Y.to(device)
 
                     #Forward pass
-                    Yhat = model(X)
+                    _,Yhat = model(X)
 
                     #Calculate loss
                     loss = y_criterion(Yhat, Y)

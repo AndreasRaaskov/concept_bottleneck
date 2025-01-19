@@ -34,4 +34,8 @@ module load cuda/11.6
 
 source env/bin/activate
 
-python3 main.py mode=Sequential
+#python3 main.py mode=Sequential experiment_name=Sequential_NoM_NoPrtraining pretrained=False
+#python3 main.py mode=Sequential experiment_name=Sequential_NoM_NoPrtraining_Rezise pretrained=False transform_method=resize
+#python3 main.py mode=Sequential experiment_name=Sequential_NoM
+python3 main.py mode=Sequential experiment_name=Sequential_MV_weigthted CNN_epochs=1000 CUB_dataloader.use_majority_voting=True
+python3 main.py mode=Sequential experiment_name=Sequential_NoMV_weigthted CNN_epochs=1000 CUB_dataloader.use_majority_voting=False

@@ -2,18 +2,18 @@
 experiment_name: "bird_classification"  # Name of the experiment for logging purposes
 dataset_name: "CUB"  # Name of the dataset (currently supports "CUB" for Caltech-UCSD Birds)
 
-mode: "Sequential" #"Standard", "Independent", "Joint", "Sequential"  # List of training modes to iterate over
+mode: "Joint" #"Sequential" #"Standard", "Independent", "Joint", "Sequential"  # List of training modes to iterate over
 
 
 
-joint_path: "models/Original_joint/best_model_1.pth"  # Path to the joint model
+joint_path: "/work3/s183901/Standard_Standard_SDG/best_XtoY_model.pth"  # Path to the joint model
 
-XtoC_path: "models/Sequential_CKPT_Majority/best_XtoC_model.pth"  # Path to first part of sequential and independent model
-CtoY_path: "models/Sequential_CKPT_Majority/Old_best_CtoY_model.pth"  # Path to second part of sequential and independent model
+XtoC_path: "evaluated_models/Concepts_CKPT_Majority/best_XtoC_model.pth"  # Path to first part of sequential and independent model
+CtoY_path: "evaluated_models/Sequential_Majority_end/best_CtoY_model.pth"  # Path to second part of sequential and independent model
 
 XtoY_path: "models/Original_standard/best_model_1.pth"  # Path to the model directory
 
-output_dir: "models/Sequential_CKPT_Majority"  # Directory to save evaluation results if blank will use the model directory
+output_dir: "/work3/s183901/Standard_Standard_SDG"  # Directory to save evaluation results if blank will use the model directory
 
 device: "auto"  # Device to use for training ("auto" for automatic detection, "cuda" for GPU, "cpu" for CPU)
 
@@ -29,10 +29,10 @@ logger:
     - ${dataset_name}
     - ${mode}
 
-split: val # Selcet val or test
+split: test # Selcet val or test
 original_model: False
 
-sailency: False # Calulate sailency score.
+sailency: True # Calulate sailency score.
 sailency_methode: "vanilla"  
 
 CUB_dataloader:
