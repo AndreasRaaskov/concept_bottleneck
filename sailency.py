@@ -48,16 +48,12 @@ def get_saliency_maps(img, target_classes,model, method_type='vanilla'):
     if method_type == 'vanilla':
         # Compute vanilla saliency
         attribution = saliency.attribute(batched_input, target=target_classes,abs=True)
-    """
-    # Loop over all the target classes
-    for target_class in target_classes:
-        if method_type == 'vanilla':
-            # Compute vanilla saliency
-            attribution = saliency.attribute(img, target=int(target_class))
-        elif method_type == 'noise_tunnel':
-            # Compute saliency with noise tunneling
-            attribution = saliency.attribute(img, target=int(target_class), nt_type='smoothgrad', nt_samples=50, stdevs=0.2)
-    """ 
+    
+    elif method_type == 'noise_tunnel':
+        # Compute saliency with noise tunneling
+        attribution = saliency.attribute(batched_input, target=target_classes, nt_type='smoothgrad', nt_samples=50, stdevs=0.2,abs=True)
+
+
     """
     TODO fingure out how to get gradcam to work with inception
     elif method_type == 'gradcam':

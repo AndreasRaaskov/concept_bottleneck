@@ -1,0 +1,17 @@
+[
+  {
+    "epoch": 0,
+    "timestamp": "0:00:00.230830",
+    "metrics": {
+      "train": {
+        "class_metrics": {
+          "top1_accuracy": 0.38788788788788786,
+          "top5_accuracy": 0.47847847847847846
+        },
+        "loss_metrics": {
+          "loss": 0.0
+        }
+      }
+    }
+  }
+]
