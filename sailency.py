@@ -82,7 +82,7 @@ def saliency_score_part(saliency_map, coordinates):
     height, width = saliency_map.shape  # Get the dimensions of the saliency map
 
     # Create coordinate grids for the entire map
-    x_coords,y_coords = np.ogrid[:height, :width]
+    x_coords,y_coords = np.ogrid[height:0:-1, :width]
 
     distances = []
     
