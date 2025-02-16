@@ -1,0 +1,4 @@
+- mode=Independent
+- XtoC_path=Majority_models/Concepts_CKPT_Majority/best_XtoC_model.pth
+- CtoY_path=Majority_models/Independent_CtoY_CKPT_majority/best_CtoY_model.pth
+- output_dir=Majority_models/Independent_CtoY_CKPT_majority

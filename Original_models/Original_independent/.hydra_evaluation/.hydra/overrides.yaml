@@ -1,0 +1,5 @@
+- mode=Independent
+- XtoC_path=Original_models/Original_concepts/best_model_1.pth
+- CtoY_path=Original_models/Original_independent/best_model_1.pth
+- output_dir=Original_models/Original_independent
+- original_model=True

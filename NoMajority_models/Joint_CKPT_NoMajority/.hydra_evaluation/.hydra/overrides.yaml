@@ -1,0 +1,4 @@
+- mode=Joint
+- joint_path=NoMajority_models/Joint_CKPT_NoMajority/best_Joint_model.pth
+- output_dir=NoMajority_models/Joint_CKPT_NoMajority
+- CUB_majority_dataloader.min_class_count=0

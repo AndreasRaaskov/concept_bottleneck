@@ -1,0 +1,4 @@
+- mode=Standard
+- XtoY_path=Original_models/Original_standard/best_model_1.pth
+- output_dir=Original_models/Original_standard
+- original_model=True

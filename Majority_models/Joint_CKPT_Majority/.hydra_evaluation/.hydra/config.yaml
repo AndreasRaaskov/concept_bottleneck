@@ -1,0 +1,39 @@
+experiment_name: bird_classification
+dataset_name: CUB
+mode: Joint
+output_dir: Majority_models/Joint_CKPT_Majority
+save_file_name: evaluation_results
+joint_path: Majority_models/Joint_CKPT_Majority/best_Joint_model.pth
+XtoC_path: null
+CtoY_path: null
+XtoY_path: null
+device: auto
+transform_method: center
+logger:
+  use_wandb: false
+  project_name: ${experiment_name}
+  run_name: null
+  group: Evaluation_${mode}
+  tags:
+  - ${dataset_name}
+  - ${mode}
+split: test
+original_model: false
+sailency: true
+sailency_methode: vanilla
+CUB_dataloader:
+  CUB_dir: data/CUB_200_2011
+CUB_NonMajority_dataloader:
+  CUB_dir: data/CUB_200_2011
+  split_file: data/train_test_val.pkl
+  return_concepts: false
+  return_visibility: false
+  use_majority_voting: false
+  min_class_count: 0
+CUB_majority_dataloader:
+  CUB_dir: data/CUB_200_2011
+  split_file: data/train_test_val.pkl
+  return_concepts: false
+  return_visibility: false
+  use_majority_voting: true
+  min_class_count: 10

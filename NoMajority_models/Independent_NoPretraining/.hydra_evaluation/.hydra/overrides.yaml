@@ -1,0 +1,5 @@
+- mode=Independent
+- XtoC_path=NoMajority_models/Concepts_CKTP_NoPretraining/best_XtoC_model.pth
+- CtoY_path=NoMajority_models/Independent_CtoY_CKPT_NoMajority/best_CtoY_model.pth
+- output_dir=NoMajority_models/Independent_NoPretraining
+- CUB_majority_dataloader.min_class_count=0

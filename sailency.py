@@ -6,7 +6,7 @@ And to get the saliency score for visible consepts
 
 import torch
 import numpy as np
-
+import torch.nn.functional as F
 from captum.attr import NoiseTunnel, Saliency, LayerGradCam
 
 
@@ -36,8 +36,7 @@ def get_saliency_maps(img, target_classes,model, method_type='vanilla'):
     elif method_type == 'noise_tunnel':
         saliency = NoiseTunnel(Saliency(model))
     elif method_type == 'gradcam':
-        layer = model.model.Conv2d_2b_3x3
-        saliency = LayerGradCam(model, layer)
+        saliency = LayerGradCam(model, model.model.Mixed_6e) #Note can be canged to any layer
     else:
         raise ValueError("Invalid method_type. Choose from 'vanilla', 'noise_tunnel', or 'gradcam'.")
 
@@ -52,15 +51,13 @@ def get_saliency_maps(img, target_classes,model, method_type='vanilla'):
     elif method_type == 'noise_tunnel':
         # Compute saliency with noise tunneling
         attribution = saliency.attribute(batched_input, target=target_classes, nt_type='smoothgrad', nt_samples=50, stdevs=0.2,abs=True)
-
-
-    """
-    TODO fingure out how to get gradcam to work with inception
+    
     elif method_type == 'gradcam':
-        # Compute GradCAM
-        attribution = saliency.attribute(img, target=target_class)
-        attribution = torch.mean(attribution, dim=1, keepdim=True)  # Average across channels
-    """
+        attribution = saliency.attribute(batched_input, target=target_classes).abs()
+        attribution = F.interpolate(attribution, size=(299, 299), mode='bilinear', align_corners=False)
+        if attribution.shape[1] == 1: #Replicate channels to match the number of input channels
+            attribution = attribution.repeat(1, 3, 1, 1)
+
     saliency_maps = []
     for map in attribution:
         map = map.squeeze().cpu().detach().numpy().sum(axis=0)  # Convert attribution to numpy array and sum across channels

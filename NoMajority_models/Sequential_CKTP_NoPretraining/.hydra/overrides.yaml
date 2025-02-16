@@ -1,0 +1,4 @@
+- mode=End
+- X_to_C_path=NoMajority_models/Concepts_CKTP_NoPretraining/best_XtoC_model.pth
+- log_dir=Sequential_CKTP_NoPretraining
+- ckpt=True

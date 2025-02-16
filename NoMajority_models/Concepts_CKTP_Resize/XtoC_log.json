@@ -1,0 +1,104 @@
+[
+  {
+    "epoch": 0,
+    "timestamp": "0:00:39.808272",
+    "metrics": {
+      "train": {
+        "concept_metrics": {
+          "accuracy": 0.9050728078505856,
+          "precision": 0.5852497517456614,
+          "recall": 0.19714032377099228,
+          "f1": 0.29493299865759015
+        },
+        "loss_metrics": {
+          "loss": 456643.7916870117
+        }
+      }
+    }
+  },
+  {
+    "epoch": 1,
+    "timestamp": "0:01:10.454318",
+    "metrics": {
+      "train": {
+        "concept_metrics": {
+          "accuracy": 0.9111151750040639,
+          "precision": 0.6444970012151938,
+          "recall": 0.2618839033040782,
+          "f1": 0.37243368545044053
+        },
+        "loss_metrics": {
+          "loss": 419160.1016845703
+        }
+      }
+    }
+  },
+  {
+    "epoch": 2,
+    "timestamp": "0:01:41.060025",
+    "metrics": {
+      "train": {
+        "concept_metrics": {
+          "accuracy": 0.9127626558182114,
+          "precision": 0.6524527479973863,
+          "recall": 0.28628619062030447,
+          "f1": 0.3979556063988782
+        },
+        "loss_metrics": {
+          "loss": 408468.90057373047
+        }
+      }
+    }
+  },
+  {
+    "epoch": 3,
+    "timestamp": "0:02:11.645043",
+    "metrics": {
+      "train": {
+        "concept_metrics": {
+          "accuracy": 0.9141625599958934,
+          "precision": 0.6609089015896522,
+          "recall": 0.3033030163053578,
+          "f1": 0.4157917147359495
+        },
+        "loss_metrics": {
+          "loss": 399873.01696777344
+        }
+      }
+    }
+  },
+  {
+    "epoch": 4,
+    "timestamp": "0:02:42.261807",
+    "metrics": {
+      "train": {
+        "concept_metrics": {
+          "accuracy": 0.915749082415749,
+          "precision": 0.6715714142393739,
+          "recall": 0.31987384718306494,
+          "f1": 0.43334340339217126
+        },
+        "loss_metrics": {
+          "loss": 391610.0673828125
+        }
+      }
+    }
+  },
+  {
+    "epoch": 5,
+    "timestamp": "0:03:12.961109",
+    "metrics": {
+      "train": {
+        "concept_metrics": {
+          "accuracy": 0.9169195905307016,
+          "precision": 0.675151927244911,
+          "recall": 0.3374056906813633,
+          "f1": 0.44994990565269577
+        },
+        "loss_metrics": {
+          "loss": 385117.8947753906
+        }
+      }
+    }
+  }
+]

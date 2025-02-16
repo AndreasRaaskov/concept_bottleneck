@@ -1,0 +1,3 @@
+- mode=Joint
+- joint_path=Majority_models/Joint_CKPT_Majority/best_Joint_model.pth
+- output_dir=Majority_models/Joint_CKPT_Majority

@@ -1,0 +1,5 @@
+- mode=Sequential
+- XtoC_path=Original_models/Original_concepts/best_model_1.pth
+- CtoY_path=Original_models/Original_sequential/best_model_1.pth
+- output_dir=Original_models/Original_sequential
+- original_model=True

@@ -17,12 +17,12 @@ def plot_sailency(img,sailency_map,concept_ids,concept_names,coordinates=None):
     
     #Plot original image
     ax[0].imshow(img.permute(1, 2, 0))
-    ax[0].set_title("Original image",fontsize=20)
+    ax[0].set_title("Original image",fontsize=30)
 
     for i,concept_id in enumerate(concept_ids):
         #Plot sailency map
         ax[i+1].imshow(sailency_map[i],cmap='viridis')
-        ax[i+1].set_title(concept_names[concept_id])
+        ax[i+1].set_title(concept_names[concept_id],fontsize=30)
         ax[i+1].axis('off')
 
         #Plot coordinates
@@ -31,7 +31,7 @@ def plot_sailency(img,sailency_map,concept_ids,concept_names,coordinates=None):
                 ax[i+1].plot(x,y,'ro')
             if len(coordinates[concept_id]) > 0:
                 score = saliency_score_part(sailency_map[i],coordinates[concept_id])
-                ax[i+1].set_title(f"{concept_names[concept_id]} Saliency score: {score:.2f}",fontsize=20)
+                ax[i+1].set_title(f"{concept_names[concept_id]} \n Saliency score: {score:.2f}",fontsize=30)
 
     plt.show()
 
