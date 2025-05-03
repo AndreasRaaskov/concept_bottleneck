@@ -226,7 +226,7 @@ def get_inception_transform(mode="train",methode="original",resol=299):
     """
 
 
-    if methode == "original":
+    if methode == "RandomResize":
         
         if mode == "train":
             transform = transforms.Compose([
@@ -247,7 +247,7 @@ def get_inception_transform(mode="train",methode="original",resol=299):
                 transforms.Normalize(mean = [0.5, 0.5, 0.5], std = [2, 2, 2])
                 #transforms.Normalize(mean = [ 0.485, 0.456, 0.406 ], std = [ 0.229, 0.224, 0.225 ]),
                 ])
-    elif methode == "center":
+    elif methode == "CenterCrop":
         #Apply center crop to both train and val
         if mode == "tain":
             transform = transforms.Compose([
@@ -264,7 +264,7 @@ def get_inception_transform(mode="train",methode="original",resol=299):
                 transforms.Normalize(mean = [0.5, 0.5, 0.5], std = [2, 2, 2])
                 ])
     
-    elif methode == "resize":
+    elif methode == "Resize":
         #Apply resize to both train and val
         if mode == "train":
             transform = transforms.Compose([

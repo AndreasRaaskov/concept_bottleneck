@@ -10,7 +10,7 @@ import logging
 
 
 #from dataset import load_data, find_class_imbalance
-from data_loaders import CUB_dataset,CUB_CtoY_dataset
+from data_loaders import CUB_dataset,CUB_CtoY_dataset,transform_dataset
 from models import   ModelXtoY, ModelXtoC, ModelXtoCtoY, ModelCtoY,get_inception_transform
 from utils.analysis import Logger
 from utils.plot_trainlog import save_training_metrics
@@ -47,18 +47,34 @@ def train_X_to_C(args):
 
 
     #define the data loaders
-    train_transform = get_inception_transform(mode="train",methode=args.transform_method)
-    val_transform = get_inception_transform(mode="val",methode=args.transform_method)
+
+    if args.concept_transform:
+        #Define the transform as keywords
+        train_transform = args.concept_transform
+        val_transform = "CenterCrop"
+    else:
+
+        #Define the transform
+        train_transform = get_inception_transform(mode="train",methode=args.transform_method)
+        val_transform = get_inception_transform(mode="val",methode=args.transform_method)
     
     if args.ckpt:
         #train checkpointed model
-        train_data = CUB_dataset(mode='ckpt',config_dict=args.CUB_dataloader, transform=train_transform)
+
+        if args.concept_transform:
+            train_data = transform_dataset(mode='ckpt',config_dict=args.CUB_dataloader, transform=train_transform)
+        else:
+            train_data = CUB_dataset(mode='ckpt',config_dict=args.CUB_dataloader, transform=train_transform)
         train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
         val_loader = None
 
     else:
-        train_data = CUB_dataset(mode='train',config_dict=args.CUB_dataloader, transform=train_transform)
-        val_data = CUB_dataset(mode='val',config_dict=args.CUB_dataloader, transform=val_transform)
+        if args.concept_transform:
+            train_data = transform_dataset(mode='train',config_dict=args.CUB_dataloader, transform=train_transform)
+            val_data = transform_dataset(mode='val',config_dict=args.CUB_dataloader, transform=val_transform)
+        else:
+            train_data = CUB_dataset(mode='train',config_dict=args.CUB_dataloader, transform=train_transform)
+            val_data = CUB_dataset(mode='val',config_dict=args.CUB_dataloader, transform=val_transform)
 
         train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
         val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=False, num_workers=4)

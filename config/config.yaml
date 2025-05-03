@@ -8,7 +8,7 @@ experiment_name: "ckpt_NoM_NoPre_rezise"
 #Meta
 dataset_name: "CUB"  # Name of the dataset (currently supports "CUB" for Caltech-UCSD Birds)
 seed: 1 # Random seed
-mode: End #"Standard", "Independent", "Joint", "Sequential","End"  # List of training modes to iterate over
+mode: Independent #"Standard", "Independent", "Joint", "Sequential","End"  # List of training modes to iterate over
 device: "auto"  # Device to use for training ("auto" for automatic detection, "cuda" for GPU, "cpu" for CPU)
 
 
@@ -18,7 +18,7 @@ device: "auto"  # Device to use for training ("auto" for automatic detection, "c
 #resampling: False  # Whether to use resampling
 
 logger:
-  use_wandb: True  # Enable/disable W&B logging
+  use_wandb: False  # Enable/disable W&B logging
   project_name: ${project_name}  # Use experiment name as project name
   run_name: ${experiment_name}  # If null, will auto-generate based on mode and timestamp
   group: ${mode}  # Group runs by training mode
@@ -36,7 +36,7 @@ CUB_dataloader: # Paremeter for the CUB dataloader
 
   use_majority_voting: False  # Whether to use majority voting for concepts labels
   min_class_count: 10 # apply the filer that removes concepts present in less than min_class_count classes only relevant after majority voting if false use all 320 concepts
-  generate_concept: "sigmoid" # Only used when making new dataset by using XtoC model make new C binary, opition: "logits" for raw output "sigmoid" for soft concepts and "hard" for hard concepts(Make concepts binary)  
+  generate_concept: "logits" # Only used when making new dataset by using XtoC model make new C binary, opition: "logits" for raw output "sigmoid" for soft concepts and "hard" for hard concepts(Make concepts binary)  
 
 
 
@@ -53,10 +53,13 @@ scheduler_step: 20  # Number of steps before decaying current learning rate by h
 lr_decay_size: 0.94 #0.94  # Learning rate decay factor
 weighted_loss: False # 'Whether to use weighted the positive loss for concept prediction
 #normalize_loss: False # Whether to normalize loss by taking attr_loss_weight into account
-transform_method: "original" # Transformation method for the concept bottleneck model ("original","resize","center")
+
 ckpt: False  #  if true combine train and val data to train the model
 freeze: false  # Whether to freeze the bottom part of the inception network
 use_aux: True # Whether to use auxiliary outputs in the inception network
+
+concept_transform: True # Use a costom dataset that set concepts to false if the transform methed cuts them out. 
+transform_method: "RandomResize" # Transformation method for the concept bottleneck model ("RandomResize","Resize","CenterCrop")
 
 #Concept model
 perceptron: True # If true use a standard SKlearn perceptron model for the CtoY model if false use the same parameters as the other models
@@ -69,8 +72,8 @@ pretrained: True  # Whether to use pretrained weights for the concept model
 use_sigmoid: False  # Whether to use sigmoid activation to predict concepts: If true concepts is treated like a probability with classification treeshold 0.5: if false concepts are raw logits with classification threshold being 0
 
 
-log_dir: /work3/s183901/${mode}_${experiment_name}
-#log_dir: models\End_Majority
+#log_dir: /work3/s183901/${mode}_${experiment_name}
+log_dir: models\End_Majority
 
 #output directorys
 hydra:

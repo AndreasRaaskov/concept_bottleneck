@@ -17,7 +17,7 @@ output_dir: "/work3/s183901/Standard_Standard_SDG"  # Directory to save evaluati
 
 device: "auto"  # Device to use for training ("auto" for automatic detection, "cuda" for GPU, "cpu" for CPU)
 
-transform_method: "center" # Transformation method for the concept bottleneck model ("original","resized","center")
+transform_method: "center" # Transformation method for the concept bottleneck model ("RandomResize","Resize","CenterCrop")
 
 
 logger:
