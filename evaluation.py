@@ -15,6 +15,7 @@ from sailency import get_saliency_maps,saliency_score_image,get_visible_consepts
 import tqdm
 from utils.ploting import plot_confusion_matrix
 
+@hydra.main(version_base=None, config_path="config", config_name="evaluation")
 def main(cfg: DictConfig):
 
 
@@ -80,12 +81,12 @@ def main(cfg: DictConfig):
     concepts_name = concepts_name[mask]
 
     #Make the analysis object
-    eval_logger = Logger(cfg=cfg,concept_mask=mask,concept_names=concepts_name,class_names=class_name,confusion_matrix=True)
+    eval_logger = Logger(cfg=cfg,concept_mask=mask,concept_names=concepts_name,class_names=class_name,confusion_matrix=True,file_name=cfg.save_file_name)
     
     
     # Calculate accuracy
-    for i in tqdm.tqdm(range(len(Non_majority_data_set))):
-
+    #for i in tqdm.tqdm(range(len(Non_majority_data_set))):
+    for i in range(len(Non_majority_data_set)):
         #Get the data
         X, C_NoMajority, Y, _ = Non_majority_data_set[i]
         C_Majority, _= Majority_dataset[i]
@@ -151,7 +152,7 @@ def main(cfg: DictConfig):
     if cfg.sailency == True and cfg.mode != "Standard":
 
 
-        for i in tqdm.tqdm(range(len(Non_majority_data_set))):
+        for i in range(len(Non_majority_data_set)):
 
             X, C, Y , coordinates = Non_majority_data_set[i]
 
@@ -179,5 +180,4 @@ def main(cfg: DictConfig):
 
         
 if __name__ == '__main__':
-    cofig_dict = OmegaConf.load('config/evaluation.yaml')
-    main(cofig_dict)
+    main()

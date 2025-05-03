@@ -287,12 +287,14 @@ class Logger:
         concept_mask: Optional[torch.Tensor] = None,
         concept_names: Optional[list[str]] = [],
         class_names: Optional[list[str]] = [],
-        confusion_matrix = False
+        confusion_matrix = False,
+        file_name ="matrix" 
     ):
         self.use_wandb = cfg.logger.use_wandb
         self.training_mode = cfg.mode # 'Joint', 'Independent', or 'Sequential'
         self.current_phase = 'joint'  # Default to joint, can be 'concept' or 'class' for sequential
         self.start_time = datetime.now()
+        self.file_name = file_name
         
         # Initialize separate epoch data for each type
         self.ctoy_epochs_data = []
@@ -356,6 +358,64 @@ class Logger:
         
 
     def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
+
+def accuracy(output, target, topk=(1,)):
+    """
+    Computes the precision@k for the specified values of k
+    output and target are Torch tensors
+    """
+
+    output.to('cpu')
+    target.to('cpu')
+    
+    maxk = max(topk)
+    batch_size = target.size(0)
+    _, pred = output.topk(maxk, 1, True, True)
+    pred = pred.t()
+    temp = target.view(1, -1).expand_as(pred)
+    pred = pred.to('cpu')
+
+    correct = pred.eq(temp)
+
+    res = []
+    for k in topk:
+        correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
+        res.append(correct_k.mul_(100.0 / batch_size))
+    return res #about:blank#blocked
+
+def binary_accuracy(output, target):
+    """
+    Computes the accuracy for multiple binary predictions
+    output and target are Torch tensors
+    """
+    pred = output.cpu() >= 0.5
+    #print(list(output.data.cpu().numpy()))
+    #print(list(pred.data[0].numpy()))
+    #print(list(target.data[0].numpy()))
+    #print(pred.size(), target.size())
+    acc = (pred.int()).eq(target.int()).sum()
+    acc = acc*100 / np.prod(np.array(target.size()))
+    return acc
+
+def multiclass_metric(output, target):
+    """
+    Return balanced accuracy score (average of recall for each class) in case of class imbalance,
+    and classification report containing precision, recall, F1 score for each class
+    """
+    balanced_acc = balanced_accuracy_score(target, output)
+    report = classification_report(target, output)
+    return balanced_acc, report
+'''
         """Reset all accumulated metrics"""
         self.metrics = defaultdict(lambda: defaultdict(list))
         self.concept_metrics = defaultdict(lambda: {
@@ -644,7 +704,7 @@ class Logger:
         # Save metrics locally
         output_dir = Path(dir)
         output_dir.mkdir(parents=True, exist_ok=True)
-        with open(output_dir / 'metrics.json', 'w') as f:
+        with open(os.path.join(output_dir,self.file_name+'.json'), 'w') as f:
             json.dump(metrics, f, indent=4)
 
     def finish(self):
