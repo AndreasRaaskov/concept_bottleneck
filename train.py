@@ -50,7 +50,7 @@ def train_X_to_C(args):
 
     if args.concept_transform:
         #Define the transform as keywords
-        train_transform = args.concept_transform
+        train_transform = args.transform_method
         val_transform = "CenterCrop"
     else:
 
